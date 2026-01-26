@@ -3,145 +3,149 @@
 # This file is distributed under the same license as the wireguard.davidv.dev package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: wireguard.davidv.dev\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-26 03:37+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2022-06-10 20:41+0000\n"
+"PO-Revision-Date: 2022-06-10 22:42+0200\n"
+"Last-Translator: Jeka <bytebuddy@yandex.ru>\n"
+"Language-Team: \n"
+"Language: ru\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.0.1\n"
+
 
 #: ../qml/Main.qml:40
 msgid "Enter password"
-msgstr ""
+msgstr "Введите пароль"
 
 #: ../qml/Main.qml:41
 msgid "Your password is required to use the wireguard kernel modules."
-msgstr ""
+msgstr "Для использования модулей ядра Wireguard требуется ваш пароль."
 
 #: ../qml/Main.qml:51 ../qml/pages/WizardPage.qml:59
 msgid "OK"
-msgstr ""
+msgstr "OK"
 
 #: ../qml/Main.qml:68
 msgid "Cancel"
-msgstr ""
+msgstr "Отмена"
 
 #: ../qml/pages/PickProfilePage.qml:16 wireguard.desktop.in.h:1
 msgid "Wireguard"
-msgstr ""
+msgstr "WireGuard"
 
 #: ../qml/pages/PickProfilePage.qml:57
 msgid "Connecting.."
-msgstr ""
+msgstr "Подключение..."
 
 #: ../qml/pages/PickProfilePage.qml:63
 msgid "Disconnected"
-msgstr ""
+msgstr "Отключено"
 
 #: ../qml/pages/PickProfilePage.qml:77
 msgid "Failed:"
-msgstr ""
+msgstr "Ошибка:"
 
 #: ../qml/pages/PickProfilePage.qml:81
 msgid "Profile %1 deleted"
-msgstr ""
+msgstr "Профиль %1 удалён"
 
 #: ../qml/pages/ProfilePage.qml:27
 msgid "Create a new profile"
-msgstr ""
+msgstr "Создать новый профиль"
 
 #: ../qml/pages/ProfilePage.qml:27
 msgid "Edit profile %1"
-msgstr ""
+msgstr "Редактировать профиль %1"
 
 #: ../qml/pages/ProfilePage.qml:53
 msgid "Profile name"
-msgstr ""
+msgstr "Имя профиля"
 
 #: ../qml/pages/ProfilePage.qml:64
 msgid "Private Key"
-msgstr ""
+msgstr "Закрытый ключ"
 
 #: ../qml/pages/ProfilePage.qml:74
 msgid "Generate"
-msgstr ""
+msgstr "Создать"
 
 #: ../qml/pages/ProfilePage.qml:80
 msgid "Copy pubkey"
-msgstr ""
+msgstr "Копировать открытый ключ"
 
 #: ../qml/pages/ProfilePage.qml:92
 msgid "IP address (with prefix length)"
-msgstr ""
+msgstr "IP-адрес (с длиной префикса)"
 
 #: ../qml/pages/ProfilePage.qml:102
 msgid "Extra routes"
-msgstr ""
+msgstr "Дополнительные маршруты"
 
 #: ../qml/pages/ProfilePage.qml:111
 msgid "DNS"
-msgstr ""
+msgstr "DNS"
 
 #: ../qml/pages/ProfilePage.qml:138
 msgid "Peer #%1"
-msgstr ""
+msgstr "Узел #%1"
 
 #: ../qml/pages/ProfilePage.qml:154
 msgid "Name"
-msgstr ""
+msgstr "Имя"
 
 #: ../qml/pages/ProfilePage.qml:162
 msgid "Public key"
-msgstr ""
+msgstr "Открытый ключ"
 
 #: ../qml/pages/ProfilePage.qml:171
 msgid "Allowed IP prefixes"
-msgstr ""
+msgstr "Разрешённые IP-префиксы"
 
 #: ../qml/pages/ProfilePage.qml:181
 msgid "Endpoint with port"
-msgstr ""
+msgstr "Конечная точка с портом"
 
 #: ../qml/pages/ProfilePage.qml:191
 msgid "Preshared key"
-msgstr ""
+msgstr "Предустановленный ключ"
 
 #: ../qml/pages/ProfilePage.qml:203
 msgid "Add peer"
-msgstr ""
+msgstr "Добавить узел"
 
 #: ../qml/pages/ProfilePage.qml:231
 msgid "Save profile"
-msgstr ""
+msgstr "Сохранить профиль"
 
 #: ../qml/pages/SettingsPage.qml:17
 msgid "Settings"
-msgstr ""
+msgstr "Настройки"
 
 #: ../qml/pages/SettingsPage.qml:43
 msgid "Use slow userspace implementation"
-msgstr ""
+msgstr "Использовать медленную реализацию в пользовательском пространстве"
 
 #: ../qml/pages/SettingsPage.qml:44
 msgid "It will be buggy, slow and probably crash."
-msgstr ""
+msgstr "Она будет содержать ошибки, медленно работать и, вероятно, завершаться аварийно."
 
 #: ../qml/pages/SettingsPage.qml:52
 msgid "Try validating the kernel module again"
-msgstr ""
+msgstr "Попробовать повторно проверить модуль ядра"
 
 #: ../qml/pages/WizardPage.qml:43
 msgid ""
 "Kernel module is <b>not usable</b>.<br/>Will fall back to the slow, buggy, "
 "userspace implementation."
 msgstr ""
+"Модуль ядра <b>не может быть использован</b>.<br/>Будет использована медленная, "
+"ненадёжная реализация в пользовательском пространстве."
 
 #: ../qml/pages/WizardPage.qml:52
 msgid ""
@@ -151,3 +155,10 @@ msgid ""
 "kernel-xiaomi-beryllium/-/merge_requests/1'>here</a> for an example change "
 "to the kernel."
 msgstr ""
+"Пожалуйста, <b>свяжитесь с портировщиком вашего устройства</b> (или со мной), "
+"чтобы добавить поддержку для вашего устройства; это займёт всего пару минут.<br/>"
+"Пример изменения ядра можно посмотреть <a href='https://gitlab.com/ubports/"
+"community-ports/android9/xiaomi-poco-f1/kernel-xiaomi-beryllium/-/merge_requests/1'>здесь</a>."
+
+#~ msgid "Ok"
+#~ msgstr "Ok"
