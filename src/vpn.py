@@ -65,7 +65,7 @@ class Vpn:
             return "Interface not initialized. Call set_pwd() first."
         try:
             profile_data = self.get_profile(profile_name)
-            config_path = PROFILES_DIR / profile_name / 'wg.conf'
+            config_path = PROFILES_DIR / profile_name / 'config.ini'
             return self.interface._connect(profile_data, config_path, use_kmod)
         except Exception as e:
             return str(e)
@@ -116,7 +116,7 @@ class Vpn:
 
         # Secure privkey storage
         privkey_path = PROFILE_DIR / 'privkey'
-        privkey_path.write_text(private_key)     # ✅ БЕЗ mode!
+        privkey_path.write_text(private_key)
         privkey_path.chmod(0o600)   # Secure permissions
 
         # Profile without privkey (security)
@@ -131,21 +131,26 @@ class Vpn:
         }
         (PROFILE_DIR / 'profile.json').write_text(json.dumps(profile, indent=4))
 
-        # Config file
-        config_path = PROFILE_DIR / 'wg.conf'
+        # Config file INI format WITH spaces (as in original project)
+        config_path = PROFILE_DIR / 'config.ini'  # ← ИМЯ ФАЙЛА КАК В ОРИГИНАЛЕ!
+        
+        # БЕЗ отступов в многострочной строке!
         config_lines = [
             "[Interface]",
+            # f"# Profile = {profile_name}",
             f"PrivateKey = {private_key}",
-            f"Address = {ip_address}",
+            # f"Address = {ip_address}",
         ]
+
+        
         if dns_servers:
             config_lines.append(f"DNS = {dns_servers}")
-
+        
         for peer in peers:
             config_lines.extend([
                 "",
                 "[Peer]",
-                f"#Name = {peer['name']}",
+                f"# Name = {peer['name']}",
                 f"PublicKey = {peer['key']}",
                 f"AllowedIPs = {peer['allowed_prefixes']}",
                 f"Endpoint = {peer['endpoint']}",
@@ -153,10 +158,26 @@ class Vpn:
             ])
             if peer.get('presharedKey'):
                 config_lines.append(f"PresharedKey = {peer['presharedKey']}")
+        
+        config_path.write_text('\n'.join(config_lines))
 
-        config_path.write_text('\n'.join(config_lines) + '\n')
+        final_config = '\n'.join(config_lines) + '\n'
+        config_path.write_text(final_config)
+
+        print("DEBUG: Config content:")
+        print(final_config)
+        print("DEBUG: Config lines (raw):")
+        for i, line in enumerate(config_lines):
+            print(f"{i}: {repr(line)}")
+        
+        config_path.write_text(final_config)
+        
+        # Также прочитайте и покажите, что записалось
+        print("DEBUG: Written content:")
+        print(config_path.read_text())
+
         return "Profile saved successfully"
-
+    
     def import_config(self, file_path):  # Fixed: instance method
         """Import .conf or .zip WireGuard config"""
         try:
@@ -178,14 +199,17 @@ class Vpn:
             return self._import_from_conf(os.path.join(tmpdir, conf_files[0]))
 
     def _import_from_conf(self, conf_path):
-        config = configparser.ConfigParser()
+        """Парсим .conf → save_profile"""
+        
+        # Читаем файл
         with open(conf_path, 'r') as f:
             content = f.read()
-
-        # Parse WireGuard .conf (not strict INI)
+        
+        # Парсим WireGuard .conf (поддерживаем оба формата)
         lines = content.strip().split('\n')
         section = None
         data = {}
+        
         for line in lines:
             line = line.strip()
             if not line or line.startswith('#'):
@@ -194,34 +218,61 @@ class Vpn:
                 section = line[1:-1]
                 data[section] = {}
             elif '=' in line and section:
-                key, value = [x.strip() for x in line.split('=', 1)]
+                # Разделяем по первому знаку равенства
+                parts = line.split('=', 1)
+                key = parts[0].strip()
+                value = parts[1].strip() if len(parts) > 1 else ''
                 data[section][key] = value
-
+        
+        # Извлекаем Interface
         interface_data = data.get('Interface', {})
+        private_key = interface_data.get('PrivateKey', '')
+        ip_address = interface_data.get('Address', '10.0.0.2/32')
+        dns_servers = interface_data.get('DNS', '')
+        
+        # Извлекаем пиры
         peers = []
-        for sec, pdata in data.items():
-            if sec.startswith('Peer'):
+        peer_index = 1
+        for sec_name, peer_data in data.items():
+            if sec_name == 'Peer' or sec_name.startswith('Peer'):
                 peers.append({
-                    'name': sec, 'key': pdata.get('PublicKey', ''),
-                    'endpoint': pdata.get('Endpoint', ''),
-                    'allowed_prefixes': pdata.get('AllowedIPs', '0.0.0.0/0'),
-                    'presharedKey': pdata.get('PresharedKey', '')
+                    'name': f'Peer{peer_index}',
+                    'key': peer_data.get('PublicKey', ''),
+                    'endpoint': peer_data.get('Endpoint', ''),
+                    'allowed_prefixes': peer_data.get('AllowedIPs', '0.0.0.0/0'),
+                    'presharedKey': peer_data.get('PresharedKey', '')
                 })
-
+                peer_index += 1
+        
+        # Имя профиля из имени файла
         profile_name = Path(conf_path).stem
-        profile_data = {
-            'profile_name': profile_name,
-            'interface_name': f'wg{len(os.listdir(PROFILES_DIR)) if PROFILES_DIR.exists() else 0}',
-            'private_key': interface_data.get('PrivateKey', ''),
-            'ip_address': interface_data.get('Address', '10.0.0.2/32'),
-            'dns_servers': interface_data.get('DNS', ''),
-            'peers': peers,
-            'extra_routes': ''
+        
+        # ✅ ВЫЗЫВАЕМ save_profile со спарсенными данными!
+        result = self.save_profile(
+            profile_name=profile_name,
+            ip_address=ip_address,
+            private_key=private_key,
+            interface_name=f'wg{len(os.listdir(PROFILES_DIR)) if PROFILES_DIR.exists() else 0}',
+            extra_routes='',  # Пока не парсим
+            dns_servers=dns_servers,
+            peers=peers
+        )
+        
+        if result.startswith('Error') or result.startswith('Bad'):
+            return {"error": result}
+        
+        return {
+            "success": True,
+            "profile_name": profile_name,
+            "data": {
+                "profile_name": profile_name,
+                "private_key": private_key,
+                "ip_address": ip_address,
+                "peers": peers
+            }
         }
 
-        # Auto-save imported profile
-        self.save_profile(**profile_data)
-        return {"success": True, "profile_name": profile_name, "data": profile_data}
+
 
     def delete_profile(self, profile):
         profile_dir = PROFILES_DIR / profile

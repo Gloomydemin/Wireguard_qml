@@ -8,7 +8,7 @@ Item {
     property alias text: tf.text
     property string placeholder: ''
     property alias enabled: tf.enabled
-    property alias control: loader.sourceComponent
+    property alias control: controlContainer.children
     signal changed(string text)
 
     anchors.left: parent.left
@@ -16,23 +16,27 @@ Item {
     anchors.leftMargin: units.gu(2)
     anchors.rightMargin: units.gu(2)
 
-    //    anchors.verticalCenter: parent.verticalCenter
     height: childrenRect.height
 
-    RowLayout {
+    ColumnLayout {
         anchors.left: parent.left
         anchors.right: parent.right
+        spacing: units.gu(1)
+
         UITK.TextField {
             id: tf
             Layout.fillWidth: true
             placeholderText: '<font color="' + theme.palette.normal.backgroundTertiaryText + '">' + placeholder + '</font>'
             onTextChanged: changed(text)
         }
-        Loader {
-            height: tf.height
-            id: loader
+
+        Item {
+            id: controlContainer
+            Layout.fillWidth: true
+            implicitHeight: childrenRect.height
         }
     }
+
     Label {
         id: lb
         x: tf.x + units.gu(1.5)

@@ -96,7 +96,7 @@ UITK.Page {
     Rectangle {
         id: addOptionsModal
         width: parent.width
-        height: 300
+        height: 180
         color: theme.palette.normal.background
         y: parent.height
         z: 10
@@ -123,7 +123,7 @@ UITK.Page {
             z: -1
             
             Behavior on opacity {
-                NumberAnimation { duration: 250 }
+                NumberAnimation { duration: 200 }
             }
             
             MouseArea {
@@ -133,46 +133,46 @@ UITK.Page {
         }
         
         Behavior on y {
-            NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
         }
         
         Column {
             anchors.fill: parent
             spacing: 0
             
-            Rectangle {
-                id: modalHeader
-                width: parent.width
-                height: units.gu(6)
-                color: theme.palette.normal.base
+            // Rectangle {
+            //     id: modalHeader
+            //     width: parent.width
+            //     height: units.gu(6)
+            //     color: theme.palette.normal.base
                 
-                Text {
-                    anchors.centerIn: parent
-                    text: i18n.tr("Add Profile")
-                    font.pixelSize: units.gu(2)
-                    font.bold: true
-                    color: theme.palette.normal.foregroundText
-                }
+            //     Text {
+            //         anchors.centerIn: parent
+            //         text: i18n.tr("Add Profile")
+            //         font.pixelSize: units.gu(2)
+            //         font.bold: true
+            //         color: theme.palette.normal.foregroundText
+            //     }
                 
-                UITK.Icon {
-                    anchors.right: parent.right
-                    anchors.rightMargin: units.gu(2)
-                    anchors.verticalCenter: parent.verticalCenter
-                    height: units.gu(3)
-                    width: height
-                    name: "close"
-                    color: theme.palette.normal.foregroundText
+            //     UITK.Icon {
+            //         anchors.right: parent.right
+            //         anchors.rightMargin: units.gu(2)
+            //         anchors.verticalCenter: parent.verticalCenter
+            //         height: units.gu(3)
+            //         width: height
+            //         name: "close"
+            //         color: theme.palette.normal.foregroundText
                     
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: addOptionsModal.close()
-                    }
-                }
-            }
+            //         MouseArea {
+            //             anchors.fill: parent
+            //             onClicked: addOptionsModal.close()
+            //         }
+            //     }
+            // }
             
             Column {
                 width: parent.width
-                height: parent.height - modalHeader.height
+                height: parent.height // - modalHeader.height
                 spacing: 0
                 
                 // Кнопка 1: Import .conf/.zip
@@ -188,6 +188,8 @@ UITK.Page {
                     }
                     
                     Row {
+                        anchors.right: parent.right
+                        anchors.rightMargin: units.gu(2)
                         anchors.centerIn: parent
                         spacing: units.gu(2)
                         
@@ -202,7 +204,7 @@ UITK.Page {
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             text: i18n.tr("Import .conf/.zip")
-                            font.pixelSize: units.gu(1.8)
+                            font.pixelSize: units.gu(1.3)
                             color: theme.palette.normal.foregroundText
                         }
                     }
@@ -236,6 +238,8 @@ UITK.Page {
                     }
                     
                     Row {
+                        anchors.right: parent.right
+                        anchors.rightMargin: units.gu(2)
                         anchors.centerIn: parent
                         spacing: units.gu(2)
                         
@@ -243,14 +247,14 @@ UITK.Page {
                             anchors.verticalCenter: parent.verticalCenter
                             height: units.gu(3)
                             width: height
-                            name: "camera"
+                            source: "../../assets/camera-qr-code.png"
                             color: theme.palette.normal.foregroundText
                         }
                         
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             text: i18n.tr("Scan QR Code")
-                            font.pixelSize: units.gu(1.8)
+                            font.pixelSize: units.gu(1.3)
                             color: theme.palette.normal.foregroundText
                         }
                     }
@@ -284,6 +288,8 @@ UITK.Page {
                     }
                     
                     Row {
+                        anchors.right: parent.right
+                        anchors.rightMargin: units.gu(2)
                         anchors.centerIn: parent
                         spacing: units.gu(2)
                         
@@ -298,7 +304,7 @@ UITK.Page {
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             text: i18n.tr("Create from scratch")
-                            font.pixelSize: units.gu(1.8)
+                            font.pixelSize: units.gu(1.3)
                             color: theme.palette.normal.foregroundText
                         }
                     }

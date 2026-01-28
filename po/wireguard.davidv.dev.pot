@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: wireguard.davidv.dev\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-28 11:39+0000\n"
+"POT-Creation-Date: 2026-01-28 17:19+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -51,47 +51,46 @@ msgid "Profile imported successfully"
 msgstr ""
 
 #: ../qml/pages/PickProfilePage copy.qml:162
-#: ../qml/pages/PickProfilePage.qml:151
 msgid "Add Profile"
 msgstr ""
 
 #: ../qml/pages/PickProfilePage copy.qml:215
-#: ../qml/pages/PickProfilePage.qml:204
+#: ../qml/pages/PickProfilePage.qml:206
 msgid "Import .conf/.zip"
 msgstr ""
 
 #: ../qml/pages/PickProfilePage copy.qml:264
-#: ../qml/pages/PickProfilePage.qml:252
+#: ../qml/pages/PickProfilePage.qml:256
 msgid "Scan QR Code"
 msgstr ""
 
 #: ../qml/pages/PickProfilePage copy.qml:312
-#: ../qml/pages/PickProfilePage.qml:300
+#: ../qml/pages/PickProfilePage.qml:306
 msgid "Create from scratch"
 msgstr ""
 
 #: ../qml/pages/PickProfilePage copy.qml:382
-#: ../qml/pages/PickProfilePage.qml:370
+#: ../qml/pages/PickProfilePage.qml:376
 msgid "Importing profile..."
 msgstr ""
 
 #: ../qml/pages/PickProfilePage copy.qml:414
-#: ../qml/pages/PickProfilePage.qml:402
+#: ../qml/pages/PickProfilePage.qml:408
 msgid "Connecting.."
 msgstr ""
 
 #: ../qml/pages/PickProfilePage copy.qml:420
-#: ../qml/pages/PickProfilePage.qml:408
+#: ../qml/pages/PickProfilePage.qml:414
 msgid "Disconnected"
 msgstr ""
 
 #: ../qml/pages/PickProfilePage copy.qml:434
-#: ../qml/pages/PickProfilePage.qml:422
+#: ../qml/pages/PickProfilePage.qml:428
 msgid "Failed:"
 msgstr ""
 
 #: ../qml/pages/PickProfilePage copy.qml:438
-#: ../qml/pages/PickProfilePage.qml:426
+#: ../qml/pages/PickProfilePage.qml:432
 msgid "Profile %1 deleted"
 msgstr ""
 
@@ -111,55 +110,55 @@ msgstr ""
 msgid "Private Key"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:74
+#: ../qml/pages/ProfilePage.qml:79
 msgid "Generate"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:80
+#: ../qml/pages/ProfilePage.qml:87
 msgid "Copy pubkey"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:92
+#: ../qml/pages/ProfilePage.qml:101
 msgid "IP address (with prefix length)"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:102
+#: ../qml/pages/ProfilePage.qml:111
 msgid "Extra routes"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:111
+#: ../qml/pages/ProfilePage.qml:120
 msgid "DNS"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:138
+#: ../qml/pages/ProfilePage.qml:147
 msgid "Peer #%1"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:154
+#: ../qml/pages/ProfilePage.qml:163
 msgid "Name"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:162
+#: ../qml/pages/ProfilePage.qml:171
 msgid "Public key"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:171
+#: ../qml/pages/ProfilePage.qml:180
 msgid "Allowed IP prefixes"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:181
+#: ../qml/pages/ProfilePage.qml:190
 msgid "Endpoint with port"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:191
+#: ../qml/pages/ProfilePage.qml:200
 msgid "Preshared key"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:203
+#: ../qml/pages/ProfilePage.qml:212
 msgid "Add peer"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:231
+#: ../qml/pages/ProfilePage.qml:240
 msgid "Save profile"
 msgstr ""
 

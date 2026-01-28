@@ -68,25 +68,34 @@ UITK.Page {
                         errorMsg = ''
                         privateKey = text
                     }
-                    control: RowLayout {
-                        UITK.Button {
-                            id: genKey
-                            text: i18n.tr("Generate")
-                            onClicked: {
-                                privateKey = python.call_sync('vpn.instance.genkey', [])
+                    control: [
+                        RowLayout {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            spacing: units.gu(1)
+                            
+                            UITK.Button {
+                                id: genKey
+                                text: i18n.tr("Generate")
+                                Layout.fillWidth: true
+                                onClicked: {
+                                    privateKey = python.call_sync('vpn.instance.genkey', [])
+                                }
+                            }
+                            
+                            UITK.Button {
+                                text: i18n.tr("Copy pubkey")
+                                enabled: privateKey
+                                Layout.fillWidth: true
+                                onClicked: {
+                                    const pubkey = python.call_sync(
+                                                    'vpn.instance.genpubkey', [privateKey])
+                                    UITK.Clipboard.push(pubkey)
+                                    toast.show('Public key copied to clipboard')
+                                }
                             }
                         }
-                        UITK.Button {
-                            text: i18n.tr("Copy pubkey")
-                            enabled: privateKey
-                            onClicked: {
-                                const pubkey = python.call_sync(
-                                                 'vpn.instance.genpubkey', [privateKey])
-                                UITK.Clipboard.push(pubkey)
-                                toast.show('Public key copied to clipboard')
-                            }
-                        }
-                    }
+                    ]
                 }
                 MyTextField {
                     title: i18n.tr("IP address (with prefix length)")
