@@ -41,59 +41,103 @@ class Interface:
     def config_interface(self, profile, config_file):
         interface_name = profile['interface_name']
         log.info('Configuring interface %s', interface_name)
-        serve_pwd = self.serve_sudo_pwd()
-        subprocess.run(['/usr/bin/sudo', '-S', 'ip', 'link', 'set', 'down', 'dev', interface_name], check=False)
-        log.info('Interface down')
 
-        serve_pwd = self.serve_sudo_pwd()
-        p = subprocess.Popen(['/usr/bin/sudo', '-S', str(WG_PATH),
-                              'setconf', interface_name, str(config_file)],
-                              stdin=serve_pwd.stdout,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE,
-                              )
+        def sudo_run(cmd, check=True):
+            serve_pwd = self.serve_sudo_pwd()
+            return subprocess.run(
+                ['/usr/bin/sudo', '-S'] + cmd,
+                stdin=serve_pwd.stdout,
+                check=check
+            )
+
+        # 1. interface down
+        sudo_run(['ip', 'link', 'set', 'down', 'dev', interface_name], check=False)
+
+        # 2. setconf
+        p = subprocess.Popen(
+            ['/usr/bin/sudo', '-S', str(WG_PATH), 'setconf', interface_name, str(config_file)],
+            stdin=self.serve_sudo_pwd().stdout,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         p.wait()
-        log.info('Interface %s configured with %s', interface_name, config_file)
-        err = p.stderr.read().decode()
         if p.returncode != 0:
-            log.error('But failed!')
-            log.error(p.stdout.read().decode())
-            log.error(err.strip())
+            err = p.stderr.read().decode()
+            log.error(err)
             return err
 
-        log.info('Successfully')
-        # TODO: check return codes
-        serve_pwd = self.serve_sudo_pwd()
-        subprocess.run(['/usr/bin/sudo', '-S', 'ip', 'address', 'add', 'dev', interface_name, profile['ip_address']], 
-                        stdin=serve_pwd.stdout,
-                        check=True)
-        log.info('Address set')
+        # 3. address
+        sudo_run(['ip', 'address', 'add', 'dev', interface_name, profile['ip_address']])
 
-        # prepend dns entries to resolv.conf
-        for dns in profile['dns_servers'].split(','):
-            dns = dns.strip()
-            if not dns:
-                continue
-            serve_pwd = self.serve_sudo_pwd()
-            subprocess.run(['/usr/bin/sudo', '-S', 'sed', '-i','1i'+'nameserver '+ dns, '/run/resolvconf/resolv.conf'],
-                            stdin=serve_pwd.stdout,
-                            check=True)
-            log.info('Added DNS server '+ dns +' to resolv.conf')
-
-        serve_pwd = self.serve_sudo_pwd()
-        subprocess.run(['/usr/bin/sudo', '-S', 'ip', 'link', 'set', 'up', 'dev', interface_name],
-                        stdin=serve_pwd.stdout,
-                        check=True)
+        # 4. interface up
+        sudo_run(['ip', 'link', 'set', 'up', 'dev', interface_name])
         log.info('Interface up')
 
-        for extra_route in profile['extra_routes'].split(','):
+        # ---- ROUTING ----
+
+        # 5. исключаем endpoint из wg (КРИТИЧНО)
+        endpoint = profile.get('endpoint')  # "host:port"
+        if endpoint:
+            endpoint_host = endpoint.split(':')[0]
+            try:
+                endpoint_ip = socket.gethostbyname(endpoint_host)
+                default_gw = self.get_default_gateway()  # ты её где-то уже получаешь
+                real_iface = self.get_default_interface()
+
+                sudo_run([
+                    'ip', 'route', 'add',
+                    f'{endpoint_ip}/32',
+                    'via', default_gw,
+                    'dev', real_iface
+                ], check=False)
+
+                log.info('Endpoint route added: %s via %s', endpoint_ip, real_iface)
+            except Exception as e:
+                log.warning('Failed to add endpoint route: %s', e)
+
+        # 6. AllowedIPs (кроме default)
+        add_default = False
+        for peer in profile['peers']:
+            allowed_ips = peer.get('allowed_prefixes', '')
+            for prefix in allowed_ips.split(','):
+                prefix = prefix.strip()
+                if not prefix:
+                    continue
+
+                if prefix in ('0.0.0.0/0', '::/0'):
+                    add_default = True
+                    continue
+
+                sudo_run(
+                    ['ip', 'route', 'add', prefix, 'dev', interface_name],
+                    check=False
+                )
+
+        # 7. default route — СТРОГО ПОСЛЕ endpoint
+        if add_default:
+            sudo_run(['ip', 'route', 'add', 'default', 'dev', interface_name], check=False)
+            log.info('Default route via %s enabled', interface_name)
+
+        # ---- DNS ----
+        dns_servers = [
+            dns.strip() for dns in profile.get('dns_servers', '').split(',')
+            if dns.strip()
+        ]
+
+        if dns_servers:
+            sudo_run(['resolvectl', 'dns', interface_name] + dns_servers)
+            sudo_run(['resolvectl', 'domain', interface_name, '~.'])
+            log.info('DNS configured for %s', interface_name)
+
+        # ---- EXTRA ROUTES ----
+        for extra_route in profile.get('extra_routes', '').split(','):
             extra_route = extra_route.strip()
             if not extra_route:
                 continue
-            serve_pwd = self.serve_sudo_pwd()
-            subprocess.run(['/usr/bin/sudo', '-S', 'ip', 'route', 'add', extra_route, 'dev', interface_name],
-                            stdin=serve_pwd.stdout,
-                            check=True)
+            sudo_run(['ip', 'route', 'add', extra_route, 'dev', interface_name], check=False)
+
+        return None
+
 
     def disconnect(self, interface_name):
         # It is fine to have this fail, it is only trying to cleanup before starting
@@ -105,10 +149,11 @@ class Interface:
 
         # remove temporary dns entries, reset resolv.conf
         serve_pwd = self.serve_sudo_pwd()
-        subprocess.run(['/usr/bin/sudo', '-S', 'resolvconf', '-u'],
-                       stdin=serve_pwd.stdout,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                       check=False)
+        subprocess.run(
+            ['/usr/bin/sudo', '-S', 'resolvectl', 'revert', interface_name],
+            stdin=serve_pwd.stdout,
+            check=False
+        )
 
     def _get_wg_status(self):
         if Path('/usr/bin/sudo').exists():
@@ -139,34 +184,39 @@ class Interface:
         data = self._get_wg_status()
         interface_status = {}
         status_by_interface = {}
-        peers = []
+
         for line in data:
             parts = line.split('\t')
             iface = parts[0]
+
             if iface != last_interface and interface_status:
                 status_by_interface[last_interface] = interface_status
                 interface_status = {}
 
             if len(parts) == 5:
                 iface, private_key, public_key, listen_port, fwmark = parts
-                interface_status['my_privkey'] = private_key
-                interface_status['peers'] = []
+                interface_status = {
+                    'my_privkey': private_key,
+                    'peers': []
+                }
                 last_interface = iface
+
             elif len(parts) == 9:
                 iface, public_key, preshared_key, endpoint, allowed_ips, latest_handshake, transfer_rx, transfer_tx, persistent_keepalive = parts
-                peer_data = {'public_key': public_key,
-                             'rx': transfer_rx,
-                             'tx': transfer_tx,
-                             'latest_handshake': latest_handshake,
-                             'up': int(latest_handshake) > 0,
-                             }
-                if not interface_status.get('peers'):
-                    interface_status['peers'] = []
-                interface_status['peers'].append(peer_data)
-                interface_status['peers'] = sorted(interface_status['peers'], key=lambda x: not x['up'])
+                peer_data = {
+                    'public_key': public_key,
+                    'rx': int(transfer_rx),
+                    'tx': int(transfer_tx),
+                    'latest_handshake': int(latest_handshake),
+                    'up': int(latest_handshake) > 0,
+                }
+                interface_status.setdefault('peers', []).append(peer_data)
+                interface_status['peers'].sort(key=lambda x: not x['up'])
+
             else:
-                raise ValueError("Can't parse line %s, it has %s parts", line, len(parts))
+                raise ValueError(f"Can't parse line: {line}")
 
         if last_interface:
             status_by_interface[last_interface] = interface_status
+
         return status_by_interface

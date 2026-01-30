@@ -4,16 +4,18 @@ import Lomiri.Components 1.3 as UITK
 import Lomiri.Content 1.3 as ContentHub
 import io.thp.pyotherside 1.3
 import Qt.labs.settings 1.0
+import Lomiri.Components.ListItems 1.3 as ListItems
 
 import "../components"
 
 UITK.Page {
-    id: root
+
+    property bool hasActiveInterfaces: false
+
     Settings {
         id: settings
         property bool useUserspace: true
     }
-    
     header: UITK.PageHeader {
         id: header
         title: i18n.tr("Wireguard")
@@ -32,7 +34,7 @@ UITK.Page {
             }
         ]
     }
-    
+
     // Импорт страницы с Content Hub
     function openImportPage() {
         var importPage = stack.push(Qt.resolvedUrl("ImportPage.qml"), {
@@ -53,7 +55,7 @@ UITK.Page {
         importProgressModal.open()
         
         // Импортируем файл через Python
-        python.call('vpn.instance.import_config', [filePath], function(result) {
+        python.call('vpn.instance.import_conf', [filePath], function(result) {
             importProgressModal.close()
             
             if (result.error) {
@@ -93,237 +95,132 @@ UITK.Page {
     }
     
     // Модальное окно для выбора способа добавления профиля
+Rectangle {
+    id: addOptionsModal
+    width: parent.width
+    height: units.gu(24)
+    color: UITK.theme.palette.normal.background
+    y: parent.height
+    z: 10
+    
+    property bool opened: false
+    
+    function open() {
+        opened = true
+        y = parent.height - height
+        modalBackground.opacity = 0.6
+    }
+    
+    function close() {
+        opened = false
+        y = parent.height
+        modalBackground.opacity = 0
+    }
+    
     Rectangle {
-        id: addOptionsModal
-        width: parent.width
-        height: 180
-        color: theme.palette.normal.background
-        y: parent.height
-        z: 10
+        id: modalBackground
+        anchors.fill: parent
+        color: "black"
+        opacity: 0
+        z: -1
         
-        property bool opened: false
-        
-        function open() {
-            opened = true
-            y = parent.height - height
-            modalBackground.opacity = 0.6
+        Behavior on opacity {
+            NumberAnimation { duration: 180 }
         }
         
-        function close() {
-            opened = false
-            y = parent.height
-            modalBackground.opacity = 0
-        }
-        
-        Rectangle {
-            id: modalBackground
+        MouseArea {
             anchors.fill: parent
-            color: "black"
-            opacity: 0
-            z: -1
-            
-            Behavior on opacity {
-                NumberAnimation { duration: 200 }
-            }
-            
-            MouseArea {
-                anchors.fill: parent
-                onClicked: addOptionsModal.close()
-            }
-        }
-        
-        Behavior on y {
-            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-        }
-        
-        Column {
-            anchors.fill: parent
-            spacing: 0
-            
-            // Rectangle {
-            //     id: modalHeader
-            //     width: parent.width
-            //     height: units.gu(6)
-            //     color: theme.palette.normal.base
-                
-            //     Text {
-            //         anchors.centerIn: parent
-            //         text: i18n.tr("Add Profile")
-            //         font.pixelSize: units.gu(2)
-            //         font.bold: true
-            //         color: theme.palette.normal.foregroundText
-            //     }
-                
-            //     UITK.Icon {
-            //         anchors.right: parent.right
-            //         anchors.rightMargin: units.gu(2)
-            //         anchors.verticalCenter: parent.verticalCenter
-            //         height: units.gu(3)
-            //         width: height
-            //         name: "close"
-            //         color: theme.palette.normal.foregroundText
-                    
-            //         MouseArea {
-            //             anchors.fill: parent
-            //             onClicked: addOptionsModal.close()
-            //         }
-            //     }
-            // }
-            
-            Column {
-                width: parent.width
-                height: parent.height // - modalHeader.height
-                spacing: 0
-                
-                // Кнопка 1: Import .conf/.zip
-                Rectangle {
-                    width: parent.width
-                    height: units.gu(8)
-                    color: "transparent"
-                    
-                    Rectangle {
-                        anchors.fill: parent
-                        color: theme.palette.normal.base
-                        opacity: importMa.pressed ? 0.3 : 0
-                    }
-                    
-                    Row {
-                        anchors.right: parent.right
-                        anchors.rightMargin: units.gu(2)
-                        anchors.centerIn: parent
-                        spacing: units.gu(2)
-                        
-                        UITK.Icon {
-                            anchors.verticalCenter: parent.verticalCenter
-                            height: units.gu(3)
-                            width: height
-                            name: "document-import"
-                            color: theme.palette.normal.foregroundText
-                        }
-                        
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: i18n.tr("Import .conf/.zip")
-                            font.pixelSize: units.gu(1.3)
-                            color: theme.palette.normal.foregroundText
-                        }
-                    }
-                    
-                    MouseArea {
-                        id: importMa
-                        anchors.fill: parent
-                        onClicked: {
-                            addOptionsModal.close()
-                            openImportPage()
-                        }
-                    }
-                }
-                
-                Rectangle {
-                    width: parent.width
-                    height: 1
-                    color: theme.palette.normal.backgroundTertiaryText
-                }
-                
-                // Кнопка 2: QR Code
-                Rectangle {
-                    width: parent.width
-                    height: units.gu(8)
-                    color: "transparent"
-                    
-                    Rectangle {
-                        anchors.fill: parent
-                        color: theme.palette.normal.base
-                        opacity: qrMa.pressed ? 0.3 : 0
-                    }
-                    
-                    Row {
-                        anchors.right: parent.right
-                        anchors.rightMargin: units.gu(2)
-                        anchors.centerIn: parent
-                        spacing: units.gu(2)
-                        
-                        UITK.Icon {
-                            anchors.verticalCenter: parent.verticalCenter
-                            height: units.gu(3)
-                            width: height
-                            source: "../../assets/camera-qr-code.png"
-                            color: theme.palette.normal.foregroundText
-                        }
-                        
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: i18n.tr("Scan QR Code")
-                            font.pixelSize: units.gu(1.3)
-                            color: theme.palette.normal.foregroundText
-                        }
-                    }
-                    
-                    MouseArea {
-                        id: qrMa
-                        anchors.fill: parent
-                        onClicked: {
-                            addOptionsModal.close()
-                            console.log("QR Code clicked")
-                        }
-                    }
-                }
-                
-                Rectangle {
-                    width: parent.width
-                    height: 1
-                    color: theme.palette.normal.backgroundTertiaryText
-                }
-                
-                // Кнопка 3: Create from scratch
-                Rectangle {
-                    width: parent.width
-                    height: units.gu(8)
-                    color: "transparent"
-                    
-                    Rectangle {
-                        anchors.fill: parent
-                        color: theme.palette.normal.base
-                        opacity: createMa.pressed ? 0.3 : 0
-                    }
-                    
-                    Row {
-                        anchors.right: parent.right
-                        anchors.rightMargin: units.gu(2)
-                        anchors.centerIn: parent
-                        spacing: units.gu(2)
-                        
-                        UITK.Icon {
-                            anchors.verticalCenter: parent.verticalCenter
-                            height: units.gu(3)
-                            width: height
-                            name: "add"
-                            color: theme.palette.normal.foregroundText
-                        }
-                        
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: i18n.tr("Create from scratch")
-                            font.pixelSize: units.gu(1.3)
-                            color: theme.palette.normal.foregroundText
-                        }
-                    }
-                    
-                    MouseArea {
-                        id: createMa
-                        anchors.fill: parent
-                        onClicked: {
-                            addOptionsModal.close()
-                            stack.push(Qt.resolvedUrl("ProfilePage.qml"),
-                                       {interfaceName: "wg" + listmodel.count})
-                        }
-                    }
-                }
-            }
+            onClicked: addOptionsModal.close()
         }
     }
     
-    // Модальное окно с индикатором загрузки
+    Behavior on y {
+        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+    }
+    
+    Column {
+        anchors.fill: parent
+        spacing: 0
+        
+        // Заголовок (замена ItemSelector)
+        Rectangle {
+            id: headerItem
+            width: parent.width
+            height: units.gu(6)
+            color: UITK.theme.palette.normal.base
+            
+            Row {
+                anchors.centerIn: parent
+                anchors.leftMargin: units.gu(3)
+                spacing: units.gu(2)
+                
+                UITK.Icon {
+                    height: units.gu(2.5)
+                    width: height
+                    name: "contact"  // или "network-vpn"
+                    color: UITK.theme.palette.normal.foregroundText
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                
+                Text {
+                    text: i18n.tr("Добавить конфигурацию")
+                    font.pixelSize: units.gu(2)
+                    font.bold: true
+                    color: UITK.theme.palette.normal.foregroundText
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+        }
+        
+        ListItems.ThinDivider {}  // Тонкий разделитель
+        
+        // Кнопка 1: Import
+        ListItems.Standard {
+            width: parent.width
+            text: i18n.tr("Import .conf/.zip")
+            iconName: "document-import"
+            progression: true
+            
+            onClicked: {
+                addOptionsModal.close()
+                openImportPage()
+            }
+        }
+        
+        ListItems.ThinDivider {}
+        
+        // Кнопка 2: QR Code
+        ListItems.Standard {
+            width: parent.width
+            text: i18n.tr("Сканировать QR-код")
+            iconName: "camera"
+            progression: true
+            
+            onClicked: {
+                addOptionsModal.close()
+                console.log("QR Code clicked")
+            }
+        }
+        
+        ListItems.ThinDivider {}
+        
+        // Кнопка 3: Create
+        ListItems.Standard {
+            width: parent.width
+            text: i18n.tr("Создать вручную")
+            iconName: "add"
+            progression: true
+            
+            onClicked: {
+                addOptionsModal.close()
+                stack.push(Qt.resolvedUrl("ProfilePage.qml"),
+                           {interfaceName: "wg" + listmodel.count})
+            }
+        }
+    }
+}
+
+// Модальное окно с индикатором загрузки
     Rectangle {
         id: importProgressModal
         width: parent.width
@@ -379,8 +276,7 @@ UITK.Page {
             }
         }
     }
-    
-    // Остальной код остается прежним...
+
     ListView {
         anchors.top: header.bottom
         anchors.left: parent.left
@@ -430,6 +326,7 @@ UITK.Page {
                                             else
                                             {
                                                 toast.show(i18n.tr('Profile %1 deleted').arg(profile_name));
+                                                // toast.show('Profile '+ profile_name +' deleted');
                                                 listmodel.remove(index);
                                             }
                                         })
@@ -550,12 +447,11 @@ UITK.Page {
     }
 
     Timer {
-        repeat: true
-        interval: 3000  // Реже, раз в 3 сек
-        running: listmodel.count > 0
-        onTriggered: showStatus()
-    }
-
+    repeat: true
+    interval: 3000
+    running: hasActiveInterfaces
+    onTriggered: showStatus()
+}
 
 
     function peerName(pubkey, peers) {
@@ -607,8 +503,9 @@ UITK.Page {
         })
     }
     function showStatus() {
-        python.call('vpn.instance.get_status', [],
+        python.call('vpn.instance.interface.current_status_by_interface', [],
                     function (all_status) {
+                        hasActiveInterfaces = Object.keys(all_status).length > 0
                         const keys = Object.keys(all_status)
                         for (var i = 0; i < listmodel.count; i++) {
                             const entry = listmodel.get(i)
@@ -633,22 +530,13 @@ UITK.Page {
     Python {
         id: python
         Component.onCompleted: {
-            addImportPath(Qt.resolvedUrl("../../src/"))
-            importModule("vpn", function () {
-                // 1. передать пароль
-                python.call("vpn.instance.set_pwd", [root.pwd], function() {
-                    // 2. загрузить профили
-                    populateProfiles()
-                    // 3. после этого можно запускать showStatus
-                    Qt.callLater(function() {
-                        if (listmodel.count > 0)
-                            showStatus()
-                    })
-                })
+            addImportPath(Qt.resolvedUrl('../../src/'))
+            importModule('vpn', function () {
+                python.call('vpn.instance.set_pwd', [root.pwd], function(result){});
+                populateProfiles();
+                if(listmodel.count > 0)
+                    showStatus();
             })
         }
     }
-
-
-
 }
