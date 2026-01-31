@@ -191,51 +191,70 @@ class Vpn:
                     '''.format_map(peer)))
 
     def import_conf(self, path):
+        imported_profiles = []
+
         if path.endswith(".zip"):
             with zipfile.ZipFile(path) as z:
                 confs = [n for n in z.namelist() if n.endswith(".conf")]
                 if not confs:
                     return {"error": "No .conf in zip"}
-                tmp = tempfile.NamedTemporaryFile(delete=False)
-                tmp.write(z.read(confs[0]))
-                tmp.close()
-                path = tmp.name
-        try:
-            (
-                profile_name,
-                ip_address,
-                private_key,
-                interface_name,
-                extra_routes,
-                dns_servers,
-                peers
-            ) = self.parse_wireguard_conf(path)
 
-            error = self.save_profile(
-                profile_name,
-                ip_address,
-                private_key,
-                interface_name,
-                extra_routes,
-                dns_servers,
-                peers
-            )
+                tmp_dir = tempfile.mkdtemp(prefix="wg_import_")
 
+                for conf_name in confs:
+                    tmp_path = os.path.join(tmp_dir, os.path.basename(conf_name))
+                    with open(tmp_path, 'wb') as f:
+                        f.write(z.read(conf_name))
+
+                    # теперь по одному отдаем в parse_wireguard_conf
+                    profile_data = self.parse_wireguard_conf(tmp_path)
+
+                    # profile_data = (profile_name, ip_address, private_key, iface, extra_routes, dns_servers, peers)
+                    profile_name = profile_data[0]
+                    ip_address = profile_data[1]
+                    private_key = profile_data[2]
+                    interface_name = profile_data[3]
+                    extra_routes = profile_data[4]
+                    dns_servers = profile_data[5]
+                    peers = profile_data[6]
+
+                    # генерим уникальное имя профиля, если есть конфликт
+                    original_name = profile_name
+                    suffix = 1
+                    while (PROFILES_DIR / profile_name).exists():
+                        profile_name = f"{original_name}_{suffix}"
+                        suffix += 1
+
+                    error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, peers)
+                    if error:
+                        return {"error": error}
+
+                    imported_profiles.append(profile_name)
+
+            return {"error": None, "profiles": imported_profiles}
+
+        else:
+            # обычный одиночный conf
+            profile_data = self.parse_wireguard_conf(path)
+            profile_name = profile_data[0]
+            ip_address = profile_data[1]
+            private_key = profile_data[2]
+            interface_name = profile_data[3]
+            extra_routes = profile_data[4]
+            dns_servers = profile_data[5]
+            peers = profile_data[6]
+
+            error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, peers)
             if error:
                 return {"error": error}
 
-            return {
-                "error": None,
-                "profile_name": profile_name
-            }
-
-        except Exception as e:
-            return {"error": str(e)}
+            return {"error": None, "profiles": [profile_name]}
 
 
 
-    def parse_wireguard_conf(self, path, interface_name="wg0"):
+    def parse_wireguard_conf(self, path):
         profile_name = os.path.splitext(os.path.basename(path))[0]
+        interface_name = f"wg_{profile_name}"
 
         peers = []
         current_peer = None
@@ -308,12 +327,22 @@ class Vpn:
     def list_profiles(self):
         profiles = []
         for path in PROFILES_DIR.glob('*/profile.json'):
-            with path.open() as fd:
-                data = json.load(fd)
-                data.setdefault('interface_name', 'wg0')
-                data['c_status'] = {}
-                print(data, flush=True)
-                profiles.append(data)
+            try:
+                with path.open() as fd:
+                    data = json.load(fd)
+            except Exception:
+                continue  # пропускаем битые файлы
+
+            # если интерфейс отсутствует — кинуть исключение, чтобы не подключать "wg0" по ошибке
+            if 'interface_name' not in data:
+                raise ValueError(f"Profile {path.parent.name} missing 'interface_name'")
+
+            # текущий статус (пока пустой, можно обновлять)
+            data['c_status'] = {}
+
+            profiles.append(data)
+
         return profiles
+
 
 instance = Vpn()

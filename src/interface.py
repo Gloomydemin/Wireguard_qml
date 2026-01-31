@@ -1,6 +1,9 @@
 import logging
 import subprocess
 import os
+import socket
+import json
+
 from pathlib import Path
 
 WG_PATH = Path(os.getcwd()) / "vendored/wg"
@@ -38,6 +41,17 @@ class Interface:
                             )
         print('started daemon')
 
+    def get_default_gateway(self):
+        p = subprocess.check_output(['ip', 'route', 'show', 'default']).decode()
+        # default via 10.0.2.2 dev ens5
+        return p.split('via')[1].split()[0]
+
+    def get_default_interface(self):
+        p = subprocess.check_output(['ip', 'route', 'show', 'default']).decode()
+        return p.split('dev')[1].split()[0]
+
+
+
     def config_interface(self, profile, config_file):
         interface_name = profile['interface_name']
         log.info('Configuring interface %s', interface_name)
@@ -49,6 +63,10 @@ class Interface:
                 stdin=serve_pwd.stdout,
                 check=check
             )
+
+        # ⚠️ СНИМАЕМ DEFAULT ДО ИЗМЕНЕНИЙ
+        default_gw = self.get_default_gateway()
+        real_iface = self.get_default_interface()
 
         # 1. interface down
         sudo_run(['ip', 'link', 'set', 'down', 'dev', interface_name], check=False)
@@ -67,93 +85,146 @@ class Interface:
             return err
 
         # 3. address
-        sudo_run(['ip', 'address', 'add', 'dev', interface_name, profile['ip_address']])
+        sudo_run(['ip', 'address', 'replace', profile['ip_address'], 'dev', interface_name])
 
         # 4. interface up
         sudo_run(['ip', 'link', 'set', 'up', 'dev', interface_name])
         log.info('Interface up')
 
-        # ---- ROUTING ----
+        # ---------- ROUTING ----------
 
-        # 5. исключаем endpoint из wg (КРИТИЧНО)
-        endpoint = profile.get('endpoint')  # "host:port"
+        # 5. endpoint exclusion
+        endpoint_ip = None
+        endpoint = None
+        for peer in profile.get('peers', []):
+            if peer.get('endpoint'):
+                endpoint = peer['endpoint']
+                break
+
         if endpoint:
             endpoint_host = endpoint.split(':')[0]
             try:
                 endpoint_ip = socket.gethostbyname(endpoint_host)
-                default_gw = self.get_default_gateway()  # ты её где-то уже получаешь
-                real_iface = self.get_default_interface()
-
                 sudo_run([
-                    'ip', 'route', 'add',
+                    'ip', 'route', 'replace',
                     f'{endpoint_ip}/32',
                     'via', default_gw,
                     'dev', real_iface
                 ], check=False)
 
-                log.info('Endpoint route added: %s via %s', endpoint_ip, real_iface)
+                self._last_endpoint_ip = endpoint_ip
+                log.info('Endpoint route added: %s via %s (%s)', endpoint_ip, default_gw, real_iface)
+
             except Exception as e:
                 log.warning('Failed to add endpoint route: %s', e)
+                self._last_endpoint_ip = None
 
-        # 6. AllowedIPs (кроме default)
+        # 6. AllowedIPs
         add_default = False
-        for peer in profile['peers']:
-            allowed_ips = peer.get('allowed_prefixes', '')
-            for prefix in allowed_ips.split(','):
+        for peer in profile.get('peers', []):
+            for prefix in peer.get('allowed_prefixes', '').split(','):
                 prefix = prefix.strip()
                 if not prefix:
                     continue
-
                 if prefix in ('0.0.0.0/0', '::/0'):
                     add_default = True
                     continue
+                sudo_run(['ip', 'route', 'replace', prefix, 'dev', interface_name], check=False)
 
-                sudo_run(
-                    ['ip', 'route', 'add', prefix, 'dev', interface_name],
-                    check=False
-                )
-
-        # 7. default route — СТРОГО ПОСЛЕ endpoint
+        # 7. default route via wg
         if add_default:
-            sudo_run(['ip', 'route', 'add', 'default', 'dev', interface_name], check=False)
+            sudo_run(['ip', 'route', 'replace', 'default', 'dev', interface_name], check=False)
             log.info('Default route via %s enabled', interface_name)
 
-        # ---- DNS ----
-        dns_servers = [
-            dns.strip() for dns in profile.get('dns_servers', '').split(',')
-            if dns.strip()
-        ]
-
+        # ---------- DNS ----------
+        dns_servers = [dns.strip() for dns in profile.get('dns_servers', '').split(',') if dns.strip()]
         if dns_servers:
             sudo_run(['resolvectl', 'dns', interface_name] + dns_servers)
             sudo_run(['resolvectl', 'domain', interface_name, '~.'])
             log.info('DNS configured for %s', interface_name)
 
-        # ---- EXTRA ROUTES ----
+        # ---------- EXTRA ROUTES ----------
         for extra_route in profile.get('extra_routes', '').split(','):
             extra_route = extra_route.strip()
             if not extra_route:
                 continue
-            sudo_run(['ip', 'route', 'add', extra_route, 'dev', interface_name], check=False)
+            sudo_run(['ip', 'route', 'replace', extra_route, 'dev', interface_name], check=False)
 
         return None
 
 
     def disconnect(self, interface_name):
-        # It is fine to have this fail, it is only trying to cleanup before starting
-        serve_pwd = self.serve_sudo_pwd()
-        subprocess.run(['/usr/bin/sudo', '-S', 'ip', 'link', 'del', 'dev', interface_name],
-                       stdin=serve_pwd.stdout,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                       check=False)
+        CONFIG_DIR = Path('/home/phablet/.local/share/wireguard.davidv.dev')
+        PROFILES_DIR = CONFIG_DIR / 'profiles'
+        profile_json = PROFILES_DIR / f"{interface_name[3:]}/profile.json"
 
-        # remove temporary dns entries, reset resolv.conf
-        serve_pwd = self.serve_sudo_pwd()
-        subprocess.run(
-            ['/usr/bin/sudo', '-S', 'resolvectl', 'revert', interface_name],
-            stdin=serve_pwd.stdout,
-            check=False
-        )
+        def sudo_run(cmd, check=False):
+            serve_pwd = self.serve_sudo_pwd()
+            return subprocess.run(
+                ['/usr/bin/sudo', '-S'] + cmd,
+                stdin=serve_pwd.stdout,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=check
+            )
+
+        # Загружаем профиль
+        profile = {}
+        if profile_json.exists():
+            try:
+                profile = json.loads(profile_json.read_text())
+            except Exception:
+                profile = {}
+
+        # Проверяем, существует ли интерфейс
+        iface_exists = subprocess.run(
+            ['ip', 'link', 'show', interface_name],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        ).returncode == 0
+
+        if iface_exists:
+            sudo_run(['ip', 'route', 'flush', 'dev', interface_name])
+            sudo_run(['resolvectl', 'revert', interface_name])
+            sudo_run(['ip', 'link', 'set', 'down', 'dev', interface_name])
+            sudo_run(['ip', 'link', 'del', 'dev', interface_name])
+
+        # Удаляем endpoint routes через физический интерфейс
+        try:
+            default_gw = self.get_default_gateway()
+            real_iface = self.get_default_interface()
+        except Exception:
+            default_gw = None
+            real_iface = None
+
+        if profile and 'peers' in profile and default_gw and real_iface:
+            for peer in profile['peers']:
+                endpoint = peer.get('endpoint')
+                if endpoint:
+                    endpoint_host = endpoint.split(':')[0]
+                    try:
+                        endpoint_ip = socket.gethostbyname(endpoint_host)
+                        routes = subprocess.check_output(['ip', 'route']).decode().splitlines()
+                        for line in routes:
+                            if endpoint_ip in line:
+                                parts = line.split()
+                                sudo_run(['ip', 'route', 'del'] + parts)
+                    except Exception:
+                        pass
+
+        # Восстанавливаем default route через физический интерфейс
+        if default_gw and real_iface:
+            try:
+                routes = subprocess.check_output(['ip', 'route', 'show', 'default']).decode()
+                if f'dev {real_iface}' not in routes:
+                    sudo_run(['ip', 'route', 'replace', 'default', 'via', default_gw, 'dev', real_iface])
+            except Exception:
+                pass
+
+
+
+
+
 
     def _get_wg_status(self):
         if Path('/usr/bin/sudo').exists():
