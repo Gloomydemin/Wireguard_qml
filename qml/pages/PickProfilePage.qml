@@ -4,13 +4,25 @@ import Lomiri.Components 1.3 as UITK
 import Lomiri.Content 1.3 as ContentHub
 import io.thp.pyotherside 1.3
 import Qt.labs.settings 1.0
-import Lomiri.Components.ListItems 1.3 as ListItems
-
 import "../components"
 
 UITK.Page {
+    id: pickPage
 
     property bool hasActiveInterfaces: false
+    property bool pendingQrClipboard: false
+    property string lastClipboardText: ""
+    property var appPalette: (typeof theme !== "undefined" && theme && theme.palette)
+                             ? theme.palette
+                             : ((typeof Theme !== "undefined" && Theme && Theme.palette)
+                                ? Theme.palette
+                                : ((UITK.Theme && UITK.Theme.palette)
+                                   ? UITK.Theme.palette
+                                   : null))
+    property color bgColor: appPalette ? appPalette.normal.background : "#f7f7f7"
+    property color baseColor: appPalette ? appPalette.normal.base : "#ffffff"
+    property color textColor: appPalette ? appPalette.normal.foregroundText : "#111111"
+    property color tertiaryTextColor: appPalette ? appPalette.normal.backgroundTertiaryText : "#888888"
 
     Settings {
         id: settings
@@ -20,12 +32,6 @@ UITK.Page {
         id: header
         title: i18n.tr("Wireguard")
         trailingActionBar.actions: [
-            UITK.Action {
-                iconName: "add"
-                onTriggered: {
-                    addOptionsModal.open()
-                }
-            },
             UITK.Action {
                 iconName: "settings"
                 onTriggered: {
@@ -43,52 +49,119 @@ UITK.Page {
         })
         
         importPage.importFinished.connect(function(filePath) {
-            handleFileImport(filePath)
+            importConfPath(filePath)
         })
     }
     
-    // Функция обработки импорта файла
-    function handleFileImport(filePath) {
+    function importConfPath(filePath) {
         console.log("Importing file:", filePath)
-        
-        // Показываем индикатор загрузки
         importProgressModal.open()
-        
-        // Импортируем файл через Python
         python.call('vpn.instance.import_conf', [filePath], function(result) {
-            importProgressModal.close()
-            
-            if (result.error) {
-                console.log("Import error:", result.error)
-                toast.show(i18n.tr("Import failed: ") + result.error)
-            } else {
-                console.log("Import success:", result)
-                toast.show(i18n.tr("Profile imported successfully"))
-                
-                // Обновляем список профилей
-                populateProfiles()
-                
-                // Если создан новый профиль, открываем его для редактирования
-                if (result.profile_name) {
-                    Qt.callLater(function() {
-                        for (var i = 0; i < listmodel.count; i++) {
-                            const entry = listmodel.get(i)
-                            if (entry.profile_name === result.profile_name) {
-                                stack.push(Qt.resolvedUrl("ProfilePage.qml"), {
-                                    "isEditing": true,
-                                    "profileName": entry.profile_name,
-                                    "peers": entry.peers || [],
-                                    "ipAddress": entry.ip_address || "",
-                                    "privateKey": entry.private_key || "",
-                                    "extraRoutes": entry.extra_routes || "",
-                                    "dnsServers": entry.dns_servers || "",
-                                    "interfaceName": entry.interface_name || "wg" + i,
-                                    "isImported": true
-                                })
-                                break
-                            }
-                        }
+            handleImportResult(result)
+        })
+    }
+
+    function importConfText(confText, profileName, interfaceName) {
+        var nameOverride = (profileName && profileName.length > 0) ? profileName : null
+        var ifaceOverride = (interfaceName && interfaceName.length > 0) ? interfaceName : null
+        importProgressModal.open()
+        python.call('vpn.instance.import_conf_text',
+                    [confText, nameOverride, ifaceOverride],
+                    function(result) {
+                        handleImportResult(result)
                     })
+    }
+
+    function looksLikeWireguard(text) {
+        if (!text || text.length < 10) {
+            return false
+        }
+        if (text.indexOf("[Interface]") !== -1) {
+            return true
+        }
+        if (text.indexOf("wireguard://") === 0 || text.indexOf("wg://") === 0) {
+            return true
+        }
+        if (text.indexOf("PrivateKey") !== -1 && text.indexOf("Endpoint") !== -1) {
+            return true
+        }
+        return false
+    }
+
+    function maybeImportFromClipboard() {
+        if (!pendingQrClipboard) {
+            return
+        }
+        var clip = ""
+        if (UITK.Clipboard && UITK.Clipboard.data) {
+            clip = UITK.Clipboard.data.text || ""
+        }
+        clip = clip.trim()
+        if (!clip || clip.length === 0) {
+            return
+        }
+        if (clip === lastClipboardText) {
+            return
+        }
+        lastClipboardText = clip
+        if (!looksLikeWireguard(clip)) {
+            return
+        }
+        pendingQrClipboard = false
+        qrClipboardTimer.stop()
+        python.call('vpn.instance.launch_app', ['wireguard.davidv.dev'], function(result) {})
+        toast.show(i18n.tr("QR detected. Importing..."))
+        importConfText(clip, null, null)
+    }
+
+    function openBarcodeReaderFlow() {
+        pendingQrClipboard = true
+        qrClipboardTimer.start()
+        python.call('vpn.instance.find_barcode_reader_app_id', [], function(appId) {
+            if (!appId) {
+                toast.show(i18n.tr("Barcode Reader not found. Open it manually, press Copy, then return."))
+                return
+            }
+            python.call('vpn.instance.launch_app', [appId], function(result) {
+                if (result && result.error) {
+                    toast.show(i18n.tr("Не удалось открыть Barcode Reader. Открой вручную, нажми Copy, затем вернись."))
+                    return
+                }
+                toast.show(i18n.tr("Scan QR, press Copy. WireGuard will open automatically."))
+            })
+        })
+    }
+
+    function handleImportResult(result) {
+        importProgressModal.close()
+        if (result.error) {
+            console.log("Import error:", result.error)
+            toast.show(i18n.tr("Import failed: ") + result.error)
+            return
+        }
+        console.log("Import success:", result)
+        toast.show(i18n.tr("Profile imported successfully"))
+
+        populateProfiles(function() {
+            if (!result.profiles || result.profiles.length === 0) {
+                return
+            }
+            const importedName = result.profiles[0]
+            for (var i = 0; i < listmodel.count; i++) {
+                const entry = listmodel.get(i)
+                if (entry.profile_name === importedName) {
+                    stack.push(Qt.resolvedUrl("ProfilePage.qml"), {
+                        "isEditing": true,
+                        "profileName": entry.profile_name,
+                        "peers": entry.peers || [],
+                        "ipAddress": entry.ip_address || "",
+                        "privateKey": entry.private_key || "",
+                        "extraRoutes": entry.extra_routes || "",
+                        "dnsServers": entry.dns_servers || "",
+                        "interfaceName": entry.interface_name || "wg" + i,
+                        "isImported": true
+                    })
+                    break
                 }
             }
         })
@@ -98,8 +171,8 @@ UITK.Page {
 Rectangle {
     id: addOptionsModal
     width: parent.width
-    height: units.gu(24)
-    color: UITK.theme.palette.normal.background
+    height: optionsColumn.implicitHeight + units.gu(4)
+    color: bgColor
     y: parent.height
     z: 10
     
@@ -139,93 +212,206 @@ Rectangle {
     }
     
     Column {
+        id: optionsColumn
         anchors.fill: parent
-        spacing: 0
-        
-        // Заголовок (замена ItemSelector)
+        anchors.margins: units.gu(2)
+        spacing: units.gu(1.5)
+
         Rectangle {
-            id: headerItem
+            width: units.gu(4)
+            height: units.gu(0.5)
+            radius: height / 2
+            color: tertiaryTextColor
+            opacity: 0.6
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
+
+        Rectangle {
             width: parent.width
-            height: units.gu(6)
-            color: UITK.theme.palette.normal.base
-            
-            Row {
-                anchors.centerIn: parent
-                anchors.leftMargin: units.gu(3)
-                spacing: units.gu(2)
-                
+            height: units.gu(7.5)
+            radius: units.gu(1)
+            color: baseColor
+            border.color: "#e0e0e0"
+            border.width: 1
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: units.gu(1.5)
+                spacing: units.gu(1.5)
+
                 UITK.Icon {
-                    height: units.gu(2.5)
-                    width: height
-                    name: "contact"  // или "network-vpn"
-                    color: UITK.theme.palette.normal.foregroundText
-                    anchors.verticalCenter: parent.verticalCenter
+                    width: units.gu(2.8)
+                    height: width
+                    name: "document-import"
+                    color: textColor
                 }
-                
-                Text {
-                    text: i18n.tr("Добавить конфигурацию")
-                    font.pixelSize: units.gu(2)
-                    font.bold: true
-                    color: UITK.theme.palette.normal.foregroundText
-                    anchors.verticalCenter: parent.verticalCenter
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: units.gu(0.2)
+
+                    Text {
+                        text: i18n.tr("Import .conf/.zip")
+                        font.pixelSize: units.gu(2)
+                        font.bold: true
+                        color: textColor
+                    }
+                    Text {
+                        text: i18n.tr("Файл конфигурации WireGuard")
+                        font.pixelSize: units.gu(1.4)
+                        color: tertiaryTextColor
+                    }
+                }
+
+                UITK.Icon {
+                    width: units.gu(2.2)
+                    height: width
+                    name: "go-next"
+                    color: tertiaryTextColor
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    addOptionsModal.close()
+                    openImportPage()
                 }
             }
         }
-        
-        ListItems.ThinDivider {}  // Тонкий разделитель
-        
-        // Кнопка 1: Import
-        ListItems.Standard {
+
+        Rectangle {
             width: parent.width
-            text: i18n.tr("Import .conf/.zip")
-            iconName: "document-import"
-            progression: true
-            
-            onClicked: {
-                addOptionsModal.close()
-                openImportPage()
+            height: units.gu(7.5)
+            radius: units.gu(1)
+            color: baseColor
+            border.color: "#e0e0e0"
+            border.width: 1
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: units.gu(1.5)
+                spacing: units.gu(1.5)
+
+                UITK.Icon {
+                    width: units.gu(2.8)
+                    height: width
+                    name: "camera"
+                    color: textColor
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: units.gu(0.2)
+
+                    Text {
+                        text: i18n.tr("Сканировать QR-код")
+                        font.pixelSize: units.gu(2)
+                        font.bold: true
+                        color: textColor
+                    }
+                    Text {
+                        text: i18n.tr("Быстрый импорт из камеры")
+                        font.pixelSize: units.gu(1.4)
+                        color: tertiaryTextColor
+                    }
+                }
+
+                UITK.Icon {
+                    width: units.gu(2.2)
+                    height: width
+                    name: "go-next"
+                    color: tertiaryTextColor
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    addOptionsModal.close()
+                    openBarcodeReaderFlow()
+                }
             }
         }
-        
-        ListItems.ThinDivider {}
-        
-        // Кнопка 2: QR Code
-        ListItems.Standard {
+
+        Rectangle {
             width: parent.width
-            text: i18n.tr("Сканировать QR-код")
-            iconName: "camera"
-            progression: true
-            
-            onClicked: {
-                addOptionsModal.close()
-                console.log("QR Code clicked")
+            height: units.gu(7.5)
+            radius: units.gu(1)
+            color: baseColor
+            border.color: "#e0e0e0"
+            border.width: 1
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: units.gu(1.5)
+                spacing: units.gu(1.5)
+
+                UITK.Icon {
+                    width: units.gu(2.8)
+                    height: width
+                    name: "add"
+                    color: textColor
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: units.gu(0.2)
+
+                    Text {
+                        text: i18n.tr("Создать вручную")
+                        font.pixelSize: units.gu(2)
+                        font.bold: true
+                        color: textColor
+                    }
+                    Text {
+                        text: i18n.tr("Заполнить параметры вручную")
+                        font.pixelSize: units.gu(1.4)
+                        color: tertiaryTextColor
+                    }
+                }
+
+                UITK.Icon {
+                    width: units.gu(2.2)
+                    height: width
+                    name: "go-next"
+                    color: tertiaryTextColor
+                }
             }
-        }
-        
-        ListItems.ThinDivider {}
-        
-        // Кнопка 3: Create
-        ListItems.Standard {
-            width: parent.width
-            text: i18n.tr("Создать вручную")
-            iconName: "add"
-            progression: true
-            
-            onClicked: {
-                addOptionsModal.close()
-                stack.push(Qt.resolvedUrl("ProfilePage.qml"),
-                           {interfaceName: "wg" + listmodel.count})
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    addOptionsModal.close()
+                    stack.push(Qt.resolvedUrl("ProfilePage.qml"),
+                               {interfaceName: "wg" + listmodel.count})
+                }
             }
         }
     }
 }
+
+Timer {
+    id: qrClipboardTimer
+    interval: 800
+    repeat: true
+    running: false
+    onTriggered: {
+        if (!pendingQrClipboard) {
+            qrClipboardTimer.stop()
+            return
+        }
+        maybeImportFromClipboard()
+    }
+}
+
 
 // Модальное окно с индикатором загрузки
     Rectangle {
         id: importProgressModal
         width: parent.width
         height: units.gu(10)
-        color: theme.palette.normal.background
+        color: bgColor
         y: parent.height
         z: 20
         
@@ -271,7 +457,7 @@ Rectangle {
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: i18n.tr("Importing profile...")
-                color: theme.palette.normal.foregroundText
+                color: textColor
                 font.pixelSize: units.gu(1.5)
             }
         }
@@ -282,6 +468,7 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
+        anchors.bottomMargin: units.gu(10)
         spacing: units.gu(0.1)
 
         id: lv
@@ -292,8 +479,11 @@ Rectangle {
 
         delegate: UITK.ListItem {
             height: col.height + col.anchors.topMargin + col.anchors.bottomMargin
+            property var status: (c_status && typeof c_status === "object")
+                                 ? c_status
+                                 : ({ "init": false, "peers": [] })
             onClicked: {
-                if (!c_status.init) {
+                if (!status.init) {
                     python.call('vpn.instance._connect',
                                 [profile_name, !settings.useUserspace],
                                 function (error_msg) {
@@ -302,7 +492,9 @@ Rectangle {
                                         return
                                     }
                                     toast.show(i18n.tr('Connecting..'))
-                                    showStatus()
+                                    populateProfiles(function() {
+                                        showStatus()
+                                    })
                                 })
                 } else {
                     python.call('vpn.instance.interface.disconnect', [interface_name],
@@ -348,7 +540,9 @@ Rectangle {
                                            "privateKey": private_key,
                                            "extraRoutes": extra_routes,
                                            "dnsServers": dns_servers,
-                                           "interfaceName": interface_name.length == 0 ? "wg" + index : interface_name
+                                           "interfaceName": (!interface_name || interface_name.length == 0)
+                                                            ? "wg" + index
+                                                            : interface_name
                                        })
                         }
                     }
@@ -372,11 +566,11 @@ Rectangle {
                         text: profile_name
                         font.pixelSize: units.gu(2.25)
                         font.bold: true
-                        color: theme.palette.normal.foregroundText
+                        color: textColor
                     }
                     TunnelStatus {
                         id: ts
-                        connected: !!c_status.peers
+                        connected: status.peers && status.peers.length > 0
                         size: 2
                     }
                 }
@@ -387,26 +581,28 @@ Rectangle {
                 }
 
                 Rectangle {
-                    visible: c_status && !!c_status.init
+                    visible: status.init
                     height: 1
-                    color: theme.palette.normal.backgroundTertiaryText
+                    color: tertiaryTextColor
                     anchors.left: parent.left
                     anchors.right: parent.right
                 }
 
                 Repeater {
-                    visible: c_status && !!c_status.init
-                    model: c_status.peers
+                    visible: status.init
+                    model: status.peers ? status.peers : []
                     anchors.left: parent.left
                     anchors.right: parent.right
                     delegate: RowLayout {
-                        property bool peerUp: c_status.init
-                                              && c_status.peers[index].up
+                        property bool peerUp: status.init
+                                              && status.peers
+                                              && status.peers[index]
+                                              && status.peers[index].up
                         anchors.left: parent.left
                         anchors.right: parent.right
                         Text {
                             Layout.fillWidth: true
-                            color: peerUp ? theme.palette.normal.foregroundText : theme.palette.normal.backgroundTertiaryText
+                            color: peerUp ? textColor : tertiaryTextColor
                             text: peerName(c_status.peers[index].public_key,
                                            peers)
                         }
@@ -421,7 +617,7 @@ Rectangle {
                             }
 
                             Text {
-                                color: theme.palette.normal.foregroundText
+                                color: textColor
                                 text: toHuman(c_status.peers[index].rx)
                             }
                             UITK.Icon {
@@ -431,11 +627,11 @@ Rectangle {
                                 color: 'green'
                             }
                             Text {
-                                color: theme.palette.normal.foregroundText
+                                color: textColor
                                 text: toHuman(c_status.peers[index].tx)
                             }
                             Text {
-                                color: theme.palette.normal.foregroundText
+                                color: textColor
                                 text: ' - ' + ago(
                                           c_status.peers[index].latest_handshake)
                             }
@@ -446,17 +642,75 @@ Rectangle {
         }
     }
 
+    Rectangle {
+        id: fabShadow
+        width: units.gu(6.6)
+        height: width
+        radius: width / 2
+        color: "#000000"
+        opacity: 0.25
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.rightMargin: units.gu(2.1)
+        anchors.bottomMargin: units.gu(2.1)
+        z: 20
+    }
+
+    Rectangle {
+        id: fabButton
+        width: units.gu(6)
+        height: width
+        radius: width / 2
+        color: "#1e88e5"
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.rightMargin: units.gu(2.4)
+        anchors.bottomMargin: units.gu(2.4)
+        z: 21
+
+        UITK.Icon {
+            anchors.centerIn: parent
+            name: "add"
+            width: units.gu(2.6)
+            height: width
+            color: "white"
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: addOptionsModal.open()
+        }
+    }
+
     Timer {
     repeat: true
     interval: 3000
-    running: hasActiveInterfaces
+    running: listmodel.count > 0
     onTriggered: showStatus()
 }
 
 
+    function normalizePeers(source) {
+        if (!source) {
+            return []
+        }
+        if (source.get && source.count !== undefined) {
+            var arr = []
+            for (var i = 0; i < source.count; i++) {
+                arr.push(source.get(i))
+            }
+            return arr
+        }
+        if (source.length !== undefined) {
+            return source
+        }
+        return []
+    }
+
     function peerName(pubkey, peers) {
-        for (var i = 0; i < peers.count; i++) {
-            const peer = peers.get(i)
+        const peerList = normalizePeers(peers)
+        for (var i = 0; i < peerList.length; i++) {
+            const peer = peerList[i]
             if (peer.key === pubkey) {
                 return peer.name
             }
@@ -493,12 +747,15 @@ Rectangle {
         return Math.round(q, 1) + units[i]
     }
 
-    function populateProfiles() {
+    function populateProfiles(onDone) {
         python.call('vpn.instance.list_profiles', [], function (profiles) {
             listmodel.clear()
             for (var i = 0; i < profiles.length; i++) {
                 profiles[i].init = false
                 listmodel.append(profiles[i])
+            }
+            if (onDone) {
+                onDone()
             }
         })
     }
@@ -507,20 +764,32 @@ Rectangle {
                     function (all_status) {
                         hasActiveInterfaces = Object.keys(all_status).length > 0
                         const keys = Object.keys(all_status)
+                        var byPriv = {}
+                        for (var k = 0; k < keys.length; k++) {
+                            const st = all_status[keys[k]]
+                            if (st && st.my_privkey) {
+                                byPriv[st.my_privkey] = st
+                            }
+                        }
                         for (var i = 0; i < listmodel.count; i++) {
                             const entry = listmodel.get(i)
 
                             let status = {
                                 "init": false
                             }
-                            for (const idx in Object.keys(all_status)) {
-                                const key = keys[idx]
-                                const i_status = all_status[key]
-                                if (entry.interface_name === key) {
-                                    status = i_status
-                                    status['init'] = true
-                                    break
+                            var matched = null
+                            if (entry.interface_name && all_status[entry.interface_name]) {
+                                matched = all_status[entry.interface_name]
+                            } else if (entry.private_key && byPriv[entry.private_key]) {
+                                matched = byPriv[entry.private_key]
+                            }
+                            if (matched) {
+                                var copy = {}
+                                for (var prop in matched) {
+                                    copy[prop] = matched[prop]
                                 }
+                                copy['init'] = true
+                                status = copy
                             }
                             listmodel.setProperty(i, 'c_status', status)
                         }
@@ -533,9 +802,24 @@ Rectangle {
             addImportPath(Qt.resolvedUrl('../../src/'))
             importModule('vpn', function () {
                 python.call('vpn.instance.set_pwd', [root.pwd], function(result){});
-                populateProfiles();
-                if(listmodel.count > 0)
-                    showStatus();
+                if (settings.useUserspace) {
+                    python.call('vpn.instance.cleanup_userspace', [], function (err) {
+                        if (err) {
+                            console.log("cleanup_userspace:", err)
+                        }
+                        populateProfiles(function() {
+                            if (listmodel.count > 0) {
+                                showStatus()
+                            }
+                        })
+                    })
+                } else {
+                    populateProfiles(function() {
+                        if (listmodel.count > 0) {
+                            showStatus()
+                        }
+                    })
+                }
             })
         }
     }

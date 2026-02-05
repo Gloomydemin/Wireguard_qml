@@ -23,6 +23,7 @@ UITK.MainView {
     Settings {
         id: settings
         property bool finishedWizard: false
+        property bool useUserspace: true
     }
 
     Toast {
@@ -60,6 +61,8 @@ UITK.MainView {
                                     }
                                     else {
                                         console.log("Passwordcheck failed")
+                                        toast.show(i18n.tr("Wrong password"))
+                                        passwordTextField.text = ""
                                     }
                                 });
                 }
@@ -104,11 +107,38 @@ UITK.MainView {
         }
     }
 
+    function cleanupUserspaceOnExit() {
+        if (!settings.useUserspace) {
+            return
+        }
+        if (!root.pwd || root.pwd.length === 0) {
+            return
+        }
+        python.call('vpn.instance.set_pwd', [root.pwd], function(result){});
+        python.call('vpn.instance.cleanup_userspace', [], function(err) {
+            if (err) {
+                console.log("cleanup_userspace:", err)
+            }
+        })
+    }
+
+    Connections {
+        target: Qt.application
+        function onAboutToQuit() {
+            cleanupUserspaceOnExit()
+        }
+    }
+
+    Component.onDestruction: {
+        cleanupUserspaceOnExit()
+    }
+
     Python {
         id: python
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../src/'))
             importModule('test', function () {})
+            importModule('vpn', function () {})
         }
     }
 }

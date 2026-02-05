@@ -6,7 +6,10 @@ import json
 
 from pathlib import Path
 
-WG_PATH = Path(os.getcwd()) / "vendored/wg"
+from vendor_paths import resolve_vendor_binary
+
+WG_PATH = resolve_vendor_binary("wg")
+WIREGUARD_GO_PATH = resolve_vendor_binary("wireguard")
 log = logging.getLogger(__name__)
 
 class Interface:
@@ -22,13 +25,40 @@ class Interface:
         self.disconnect(interface_name)
 
         if use_kmod:
+            self.stop_userspace_daemons()
             serve_pwd = self.serve_sudo_pwd()
             subprocess.run(['/usr/bin/sudo', '-S', 'ip', 'link', 'add', interface_name, 'type', 'wireguard'],
                             stdin=serve_pwd.stdout,
                             check=True)
-            self.config_interface(profile, config_file)
+            err = self.config_interface(profile, config_file)
+            if err:
+                return err
         else:
+            self.stop_userspace_daemons()
+            err = self.check_userspace_binary()
+            if err:
+                return err
             self.start_daemon(profile, config_file)
+
+        return None
+
+    def check_userspace_binary(self):
+        try:
+            p = subprocess.run(
+                [str(WIREGUARD_GO_PATH)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False
+            )
+        except FileNotFoundError:
+            return "Userspace binary not found"
+        except OSError as e:
+            return f"Userspace binary failed to start: {e}"
+
+        stderr = p.stderr.decode(errors='ignore')
+        if "GLIBC_" in stderr or "not found" in stderr:
+            return "Userspace binary incompatible: " + stderr.strip()
+        return None
 
 
     def start_daemon(self, profile, config_file):
@@ -40,6 +70,37 @@ class Interface:
                               start_new_session=True,
                             )
         print('started daemon')
+
+    def userspace_running(self):
+        try:
+            p = subprocess.run(
+                ['pgrep', '-f', str(WIREGUARD_GO_PATH)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            return p.returncode == 0
+        except FileNotFoundError:
+            p = subprocess.run(
+                ['ps', '-eo', 'cmd'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            if p.returncode != 0:
+                return False
+            haystack = p.stdout.decode(errors='ignore')
+            return str(WIREGUARD_GO_PATH) in haystack
+
+    def stop_userspace_daemons(self):
+        serve_pwd = self.serve_sudo_pwd()
+        subprocess.run(
+            ['/usr/bin/sudo', '-S', 'pkill', '-f', str(WIREGUARD_GO_PATH)],
+            stdin=serve_pwd.stdout,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
 
     def get_default_gateway(self):
         p = subprocess.check_output(['ip', 'route', 'show', 'default']).decode()
@@ -156,7 +217,6 @@ class Interface:
     def disconnect(self, interface_name):
         CONFIG_DIR = Path('/home/phablet/.local/share/wireguard.davidv.dev')
         PROFILES_DIR = CONFIG_DIR / 'profiles'
-        profile_json = PROFILES_DIR / f"{interface_name[3:]}/profile.json"
 
         def sudo_run(cmd, check=False):
             serve_pwd = self.serve_sudo_pwd()
@@ -168,13 +228,17 @@ class Interface:
                 check=check
             )
 
-        # Загружаем профиль
+        # Загружаем профиль по имени интерфейса (без предположений про префиксы)
         profile = {}
-        if profile_json.exists():
-            try:
-                profile = json.loads(profile_json.read_text())
-            except Exception:
-                profile = {}
+        if PROFILES_DIR.exists():
+            for profile_json in PROFILES_DIR.glob('*/profile.json'):
+                try:
+                    data = json.loads(profile_json.read_text())
+                except Exception:
+                    continue
+                if data.get('interface_name') == interface_name:
+                    profile = data
+                    break
 
         # Проверяем, существует ли интерфейс
         iface_exists = subprocess.run(
@@ -228,19 +292,30 @@ class Interface:
 
     def _get_wg_status(self):
         if Path('/usr/bin/sudo').exists():
-            serve_pwd = self.serve_sudo_pwd()
-            p = subprocess.Popen(['/usr/bin/sudo', '-S', str(WG_PATH), 'show', 'all', 'dump'],
-                                 stdin=serve_pwd.stdout,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE,
-                                 )
-            p.wait()
+            if self._sudo_pwd:
+                sudo_cmd = ['/usr/bin/sudo', '-S']
+                stdin = self.serve_sudo_pwd().stdout
+            else:
+                sudo_cmd = ['/usr/bin/sudo', '-n']
+                stdin = None
+            try:
+                p = subprocess.run(
+                    sudo_cmd + [str(WG_PATH), 'show', 'all', 'dump'],
+                    stdin=stdin,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=2,
+                    check=False
+                )
+            except subprocess.TimeoutExpired:
+                print('`wg show all dump` timed out')
+                return []
             if p.returncode != 0:
                 print('Failed to run `wg show all dump`:')
-                print(p.stdout.read().decode().strip())
-                print(p.stderr.read().decode().strip())
+                print(p.stdout.decode(errors='ignore').strip())
+                print(p.stderr.decode(errors='ignore').strip())
                 return []
-            lines = p.stdout.read().decode().strip().splitlines()
+            lines = p.stdout.decode(errors='ignore').strip().splitlines()
             return lines
         return '''
     wg0	qJ1YWXV6nPmouAditrRahp+5X/DlBJD02ZPkFjbLdE4=	iSOYKa61gszRvGnA4+IMkxEp364e1LrIcGuXcM4IeU8=	0	off

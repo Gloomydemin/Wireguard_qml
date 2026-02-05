@@ -1,4 +1,4 @@
 {
-  "source": ["documents"],
-  "destination": ["documents"]
+  "source": ["documents", "text"],
+  "destination": ["documents", "text"]
 }

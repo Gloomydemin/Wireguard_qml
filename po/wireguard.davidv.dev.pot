@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: wireguard.davidv.dev\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-31 18:34+0000\n"
+"POT-Creation-Date: 2026-02-05 11:48+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,19 +17,23 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../qml/Main.qml:40
+#: ../qml/Main.qml:41
 msgid "Enter password"
 msgstr ""
 
-#: ../qml/Main.qml:41
+#: ../qml/Main.qml:42
 msgid "Your password is required to use the wireguard kernel modules."
 msgstr ""
 
-#: ../qml/Main.qml:51 ../qml/pages/WizardPage.qml:59
+#: ../qml/Main.qml:52 ../qml/pages/WizardPage.qml:101
 msgid "OK"
 msgstr ""
 
-#: ../qml/Main.qml:68
+#: ../qml/Main.qml:64
+msgid "Wrong password"
+msgstr ""
+
+#: ../qml/Main.qml:71
 msgid "Cancel"
 msgstr ""
 
@@ -37,120 +41,149 @@ msgstr ""
 msgid "Select File"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:21 wireguard.desktop.in.h:1
+#: ../qml/pages/PickProfilePage.qml:33 wireguard.desktop.in.h:1
 msgid "Wireguard"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:63
+#: ../qml/pages/PickProfilePage.qml:113
+msgid "QR detected. Importing..."
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:122
+msgid "Barcode Reader not found. Open it manually, press Copy, then return."
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:127
+msgid ""
+"Не удалось открыть Barcode Reader. Открой вручную, нажми Copy, затем вернись."
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:130
+msgid "Scan QR, press Copy. WireGuard will open automatically."
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:139
 msgid "Import failed: "
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:66
+#: ../qml/pages/PickProfilePage.qml:143
 msgid "Profile imported successfully"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:166
-msgid "Добавить конфигурацию"
-msgstr ""
-
-#: ../qml/pages/PickProfilePage.qml:180
+#: ../qml/pages/PickProfilePage.qml:254
 msgid "Import .conf/.zip"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:195
+#: ../qml/pages/PickProfilePage.qml:260
+msgid "Файл конфигурации WireGuard"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:308
 msgid "Сканировать QR-код"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:210
+#: ../qml/pages/PickProfilePage.qml:314
+msgid "Быстрый импорт из камеры"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:362
 msgid "Создать вручную"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:273
+#: ../qml/pages/PickProfilePage.qml:368
+msgid "Заполнить параметры вручную"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:459
 msgid "Importing profile..."
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:304
+#: ../qml/pages/PickProfilePage.qml:494
 msgid "Connecting.."
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:310
+#: ../qml/pages/PickProfilePage.qml:502
 msgid "Disconnected"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:324
+#: ../qml/pages/PickProfilePage.qml:516
 msgid "Failed:"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:328
+#: ../qml/pages/PickProfilePage.qml:520
 msgid "Profile %1 deleted"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:27
+#: ../qml/pages/ProfilePage.qml:28
 msgid "Create a new profile"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:27
+#: ../qml/pages/ProfilePage.qml:28
 msgid "Edit profile %1"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:53
+#: ../qml/pages/ProfilePage.qml:54
 msgid "Profile name"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:64
+#: ../qml/pages/ProfilePage.qml:65
 msgid "Private Key"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:74
+#: ../qml/pages/ProfilePage.qml:75
 msgid "Generate"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:80
+#: ../qml/pages/ProfilePage.qml:81
 msgid "Copy pubkey"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:92
+#: ../qml/pages/ProfilePage.qml:93
 msgid "IP address (with prefix length)"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:102
+#: ../qml/pages/ProfilePage.qml:103
 msgid "Extra routes"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:111
+#: ../qml/pages/ProfilePage.qml:112
 msgid "DNS"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:138
+#: ../qml/pages/ProfilePage.qml:139
 msgid "Peer #%1"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:154
+#: ../qml/pages/ProfilePage.qml:155
 msgid "Name"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:162
+#: ../qml/pages/ProfilePage.qml:163
 msgid "Public key"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:171
+#: ../qml/pages/ProfilePage.qml:172
 msgid "Allowed IP prefixes"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:181
+#: ../qml/pages/ProfilePage.qml:182
 msgid "Endpoint with port"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:191
+#: ../qml/pages/ProfilePage.qml:192
 msgid "Preshared key"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:203
+#: ../qml/pages/ProfilePage.qml:204
 msgid "Add peer"
 msgstr ""
 
-#: ../qml/pages/ProfilePage.qml:231
+#: ../qml/pages/ProfilePage.qml:232
 msgid "Save profile"
+msgstr ""
+
+#: ../qml/pages/QrImportPage.qml:16
+msgid "Сканировать QR через Barcode Reader"
 msgstr ""
 
 #: ../qml/pages/SettingsPage.qml:17
@@ -165,17 +198,21 @@ msgstr ""
 msgid "It will be buggy, slow and probably crash."
 msgstr ""
 
-#: ../qml/pages/SettingsPage.qml:52
+#: ../qml/pages/SettingsPage.qml:57
 msgid "Try validating the kernel module again"
 msgstr ""
 
-#: ../qml/pages/WizardPage.qml:43
+#: ../qml/pages/WizardPage.qml:66
+msgid "Python error: %1"
+msgstr ""
+
+#: ../qml/pages/WizardPage.qml:85
 msgid ""
 "Kernel module is <b>not usable</b>.<br/>Will fall back to the slow, buggy, "
 "userspace implementation."
 msgstr ""
 
-#: ../qml/pages/WizardPage.qml:52
+#: ../qml/pages/WizardPage.qml:94
 msgid ""
 "Please, <b>get in touch with your device porter</b> (or with me) to add "
 "support on your device; it takes a couple of minutes only.<br/>See <a "

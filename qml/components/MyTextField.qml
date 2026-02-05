@@ -10,6 +10,16 @@ Item {
     property alias enabled: tf.enabled
     property alias control: controlContainer.children
     signal changed(string text)
+    property var appPalette: (typeof theme !== "undefined" && theme && theme.palette)
+                             ? theme.palette
+                             : ((typeof Theme !== "undefined" && Theme && Theme.palette)
+                                ? Theme.palette
+                                : ((UITK.Theme && UITK.Theme.palette)
+                                   ? UITK.Theme.palette
+                                   : null))
+    property color textColor: appPalette ? appPalette.normal.foregroundText : "#111111"
+    property color bgColor: appPalette ? appPalette.normal.background : "#ffffff"
+    property color tertiaryTextColor: appPalette ? appPalette.normal.backgroundTertiaryText : "#888888"
 
     anchors.left: parent.left
     anchors.right: parent.right
@@ -26,7 +36,7 @@ Item {
         UITK.TextField {
             id: tf
             Layout.fillWidth: true
-            placeholderText: '<font color="' + theme.palette.normal.backgroundTertiaryText + '">' + placeholder + '</font>'
+            placeholderText: '<font color="' + tertiaryTextColor + '">' + placeholder + '</font>'
             onTextChanged: changed(text)
         }
 
@@ -43,12 +53,12 @@ Item {
         y: tf.y - height / 2
         z: 2
         text: title
-        color: theme.palette.normal.foregroundText
+        color: textColor
         font.pixelSize: units.gu(1.25)
     }
 
     Rectangle {
-        color: tf.enabled ? theme.palette.normal.background : '#ddd'
+        color: tf.enabled ? bgColor : '#ddd'
         x: lb.x - units.gu(0.5)
         y: tf.y
         width: lb.width + units.gu(1)

@@ -5,10 +5,22 @@ def test_sudo(sudo_pwd):
         if not Path('/usr/bin/sudo').exists():
             return False
 
-        subprocess.run(['/usr/bin/sudo', '-k'])    
         try:
-            serve_pwd = subprocess.Popen(['echo', sudo_pwd], stdout=subprocess.PIPE)
-            subprocess.run(['/usr/bin/sudo', '-S', 'echo', 'Check for sudo'], stdin=serve_pwd.stdout, check=True)
-        except subprocess.CalledProcessError:
+            # If cached credentials exist, don't prompt.
+            if subprocess.run(['/usr/bin/sudo', '-n', 'true'],
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE).returncode == 0:
+                return True
+            if sudo_pwd is None:
+                return False
+            # Validate provided password.
+            p = subprocess.run(
+                ['/usr/bin/sudo', '-S', '-p', '', 'true'],
+                input=(sudo_pwd + '\n').encode(),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False
+            )
+            return p.returncode == 0
+        except Exception:
             return False
-        return True

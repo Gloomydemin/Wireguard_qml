@@ -8,6 +8,7 @@ import "../components"
 
 UITK.Page {
     property bool isEditing: false
+    property bool isImported: false
     property string errorMsg
     property string profileName
     property string ipAddress
@@ -271,10 +272,27 @@ UITK.Page {
         }
     }
 
-    Component.onCompleted: {
+    function normalizePeers(source) {
+        if (!source) {
+            return []
+        }
+        if (source.get && source.count !== undefined) {
+            var arr = []
+            for (var i = 0; i < source.count; i++) {
+                arr.push(source.get(i))
+            }
+            return arr
+        }
+        if (source.length !== undefined) {
+            return source
+        }
+        return []
+    }
 
-        for (var i = 0; i < peers.count; i++) {
-            const p = peers.get(i)
+    Component.onCompleted: {
+        const peerList = normalizePeers(peers)
+        for (var i = 0; i < peerList.length; i++) {
+            const p = peerList[i]
             listmodel.append({
                                  "name": p.name,
                                  "key": p.key,

@@ -11,7 +11,9 @@ import vpn
 
 from pathlib import Path
 
-WG_PATH = Path(os.getcwd()) / "vendored/wireguard"
+from vendor_paths import resolve_vendor_binary
+
+WG_PATH = resolve_vendor_binary("wireguard")
 LOG_DIR = Path('/home/phablet/.cache/wireguard.davidv.dev')
 log = None
 
@@ -45,7 +47,9 @@ def keep_tunnel(profile_name, sudo_pwd):
     profile = _vpn.get_profile(profile_name)
     interface_name = profile['interface_name']
     interface_file = Path('/sys/class/net/') / interface_name
-    bring_up_interface(interface_name)
+    if not bring_up_interface(interface_name):
+        log.info("Interface %s could not be created. Exiting", interface_name)
+        return
 
     log.info('Setting up tunnel')
     _vpn.interface.config_interface(profile, CONFIG_FILE)
@@ -81,6 +85,8 @@ def bring_up_interface(interface_name):
         log.error('Failed to execute wireguard')
         log.error('stdout: %s', p.stdout.read())
         log.error('stderr: %s', p.stderr.read())
+        return False
+    return True
 
 def daemonize():
     """

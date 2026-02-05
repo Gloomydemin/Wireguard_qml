@@ -45,7 +45,12 @@ UITK.Page {
                 control: UITK.Switch {
                     enabled: settings.canUseKmod
                     checked: settings.useUserspace
-                    onCheckedChanged: settings.useUserspace = checked
+                    onCheckedChanged: {
+                        settings.useUserspace = checked
+                        if (typeof root !== "undefined" && root.settings) {
+                            root.settings.useUserspace = checked
+                        }
+                    }
                 }
             }
             UITK.Button {
