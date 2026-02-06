@@ -37,25 +37,13 @@ UITK.Page {
         }
     }
 
-    ImageCapture {
-        id: imageCapture
-        camera: camera
-        onImageSaved: function(id, path) {
-            if (!scanning) return
-            decodeImage(path)
-        }
-        onError: {
-            decoding = false
-            statusText.text = i18n.tr("Ошибка камеры")
-        }
-    }
-
     VideoOutput {
         anchors.fill: parent
         anchors.topMargin: header.height
         source: camera
         autoOrientation: true
         fillMode: VideoOutput.PreserveAspectCrop
+        id: videoOutput
     }
 
     Rectangle {
@@ -97,8 +85,19 @@ UITK.Page {
         repeat: true
         running: scanning && camera.cameraStatus === Camera.ActiveStatus && !decoding
         onTriggered: {
+            if (!videoOutput.grabToImage) {
+                return
+            }
             decoding = true
-            imageCapture.captureToLocation(capturePath)
+            var tmpPath = "/tmp/wg_qr_frame_" + Date.now() + ".png"
+            videoOutput.grabToImage(function(result) {
+                if (!result || !result.saveToFile) {
+                    decoding = false
+                    return
+                }
+                result.saveToFile(tmpPath)
+                decodeImage(tmpPath)
+            })
         }
     }
 

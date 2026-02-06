@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import QtQuick.Layouts 1.12
 import Lomiri.Components 1.3 as UITK
+import Lomiri.Components.Popups 1.3 as Popups
 import Lomiri.Content 1.3 as ContentHub
 import io.thp.pyotherside 1.3
 import Qt.labs.settings 1.0
@@ -73,7 +74,15 @@ UITK.Page {
     function openQrScanPage() {
         var qrPage = stack.push(Qt.resolvedUrl("QrScanPage.qml"))
         qrPage.qrDecoded.connect(function(payload) {
-            importConfText(payload, null, null)
+            openQrNameDialog(payload)
+        })
+    }
+
+    // Ask user for profile name after QR decode
+    function openQrNameDialog(qrText) {
+        var dlg = Popups.PopupUtils.open(qrNameDialogComponent, pickPage, { qrText: qrText })
+        dlg.accepted.connect(function(profileName) {
+            importConfText(qrText, profileName, null)
         })
     }
 
@@ -151,7 +160,7 @@ Rectangle {
             onClicked: addOptionsModal.close()
         }
     }
-    
+
     Behavior on y {
         NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
     }
@@ -336,6 +345,49 @@ Rectangle {
     }
 }
 
+Component {
+    id: qrNameDialogComponent
+    Popups.Dialog {
+        id: qrDialog
+        property string qrText: ""
+
+        signal accepted(string profileName)
+        signal rejected()
+
+        title: i18n.tr("Имя профиля")
+        text: i18n.tr("Введите имя для импортируемого профиля")
+
+        UITK.TextField {
+            id: qrProfileField
+            placeholderText: i18n.tr("Название профиля")
+        }
+
+        RowLayout {
+            spacing: units.gu(1)
+            UITK.Button {
+                text: i18n.tr("Отмена")
+                onClicked: {
+                    qrDialog.rejected()
+                    Popups.PopupUtils.close(qrDialog)
+                }
+            }
+            UITK.Button {
+                text: i18n.tr("Сохранить")
+                color: UITK.LomiriColors.green
+                onClicked: {
+                    var name = qrProfileField.text.trim()
+                    if (!name || name.length === 0) {
+                        toast.show(i18n.tr("Введите имя профиля"))
+                        return
+                    }
+                    qrDialog.accepted(name)
+                    Popups.PopupUtils.close(qrDialog)
+                }
+            }
+        }
+    }
+}
+
 
 // Модальное окно с индикатором загрузки
     Rectangle {
@@ -501,7 +553,7 @@ Rectangle {
                     }
                     TunnelStatus {
                         id: ts
-                        connected: status.peers && status.peers.length > 0
+                        connected: !!(status && status.peers && status.peers.length > 0)
                         size: 2
                     }
                 }
@@ -512,7 +564,7 @@ Rectangle {
                 }
 
                 Rectangle {
-                    visible: status.init
+                    visible: !!(status && status.init)
                     height: 1
                     color: tertiaryTextColor
                     anchors.left: parent.left
@@ -520,21 +572,21 @@ Rectangle {
                 }
 
                 Repeater {
-                    visible: status.init
+                    visible: !!(status && status.init)
                     model: status.peers ? status.peers : []
                     anchors.left: parent.left
                     anchors.right: parent.right
                     delegate: RowLayout {
-                        property bool peerUp: status.init
-                                              && status.peers
-                                              && status.peers[index]
-                                              && status.peers[index].up
+                        property bool peerUp: !!(status && status.init
+                                                  && status.peers
+                                                  && status.peers[index]
+                                                  && status.peers[index].up)
                         anchors.left: parent.left
                         anchors.right: parent.right
                         Text {
                             Layout.fillWidth: true
                             color: peerUp ? textColor : tertiaryTextColor
-                            text: peerName(c_status.peers[index].public_key,
+                            text: peerName(status.peers && status.peers[index] ? status.peers[index].public_key : "",
                                            peers)
                         }
                         Row {
@@ -549,7 +601,7 @@ Rectangle {
 
                             Text {
                                 color: textColor
-                                text: toHuman(c_status.peers[index].rx)
+                                text: toHuman(status.peers && status.peers[index] ? status.peers[index].rx : 0)
                             }
                             UITK.Icon {
                                 source: '../../assets/arrow_up.png'
@@ -559,57 +611,17 @@ Rectangle {
                             }
                             Text {
                                 color: textColor
-                                text: toHuman(c_status.peers[index].tx)
+                                text: toHuman(status.peers && status.peers[index] ? status.peers[index].tx : 0)
                             }
                             Text {
                                 color: textColor
                                 text: ' - ' + ago(
-                                          c_status.peers[index].latest_handshake)
+                                          status.peers && status.peers[index] ? status.peers[index].latest_handshake : 0)
                             }
                         }
                     }
                 }
             }
-        }
-    }
-
-    Rectangle {
-        id: fabShadow
-        width: units.gu(6.6)
-        height: width
-        radius: width / 2
-        color: "#000000"
-        opacity: 0.25
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.rightMargin: units.gu(2.1)
-        anchors.bottomMargin: units.gu(2.1)
-        z: 20
-    }
-
-    Rectangle {
-        id: fabButton
-        width: units.gu(6)
-        height: width
-        radius: width / 2
-        color: "#1e88e5"
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.rightMargin: units.gu(2.4)
-        anchors.bottomMargin: units.gu(2.4)
-        z: 21
-
-        UITK.Icon {
-            anchors.centerIn: parent
-            name: "add"
-            width: units.gu(2.6)
-            height: width
-            color: "white"
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: addOptionsModal.open()
         }
     }
 

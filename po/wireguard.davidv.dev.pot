@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: wireguard.davidv.dev\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-05 11:48+0000\n"
+"POT-Creation-Date: 2026-02-06 05:52+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -41,76 +41,83 @@ msgstr ""
 msgid "Select File"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:33 wireguard.desktop.in.h:1
+#: ../qml/pages/PickProfilePage.qml:32 wireguard.desktop.in.h:1
 msgid "Wireguard"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:113
-msgid "QR detected. Importing..."
-msgstr ""
-
-#: ../qml/pages/PickProfilePage.qml:122
-msgid "Barcode Reader not found. Open it manually, press Copy, then return."
-msgstr ""
-
-#: ../qml/pages/PickProfilePage.qml:127
-msgid ""
-"Не удалось открыть Barcode Reader. Открой вручную, нажми Copy, затем вернись."
-msgstr ""
-
-#: ../qml/pages/PickProfilePage.qml:130
-msgid "Scan QR, press Copy. WireGuard will open automatically."
-msgstr ""
-
-#: ../qml/pages/PickProfilePage.qml:139
+#: ../qml/pages/PickProfilePage.qml:93
 msgid "Import failed: "
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:143
+#: ../qml/pages/PickProfilePage.qml:97
 msgid "Profile imported successfully"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:254
+#: ../qml/pages/PickProfilePage.qml:208
 msgid "Import .conf/.zip"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:260
+#: ../qml/pages/PickProfilePage.qml:214
 msgid "Файл конфигурации WireGuard"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:308
+#: ../qml/pages/PickProfilePage.qml:262 ../qml/pages/QrScanPage.qml:16
 msgid "Сканировать QR-код"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:314
+#: ../qml/pages/PickProfilePage.qml:268
 msgid "Быстрый импорт из камеры"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:362
+#: ../qml/pages/PickProfilePage.qml:316
 msgid "Создать вручную"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:368
+#: ../qml/pages/PickProfilePage.qml:322
 msgid "Заполнить параметры вручную"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:459
+#: ../qml/pages/PickProfilePage.qml:357
+msgid "Имя профиля"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:358
+msgid "Введите имя для импортируемого профиля"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:362
+msgid "Название профиля"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:368
+msgid "Отмена"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:375
+msgid "Сохранить"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:380
+msgid "Введите имя профиля"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:442
 msgid "Importing profile..."
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:494
+#: ../qml/pages/PickProfilePage.qml:477
 msgid "Connecting.."
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:502
+#: ../qml/pages/PickProfilePage.qml:485
 msgid "Disconnected"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:516
+#: ../qml/pages/PickProfilePage.qml:499
 msgid "Failed:"
 msgstr ""
 
-#: ../qml/pages/PickProfilePage.qml:520
+#: ../qml/pages/PickProfilePage.qml:503
 msgid "Profile %1 deleted"
 msgstr ""
 
@@ -184,6 +191,18 @@ msgstr ""
 
 #: ../qml/pages/QrImportPage.qml:16
 msgid "Сканировать QR через Barcode Reader"
+msgstr ""
+
+#: ../qml/pages/QrScanPage.qml:69
+msgid "Наведите камеру на QR-код"
+msgstr ""
+
+#: ../qml/pages/QrScanPage.qml:116
+msgid "Не удалось распознать QR"
+msgstr ""
+
+#: ../qml/pages/QrScanPage.qml:117
+msgid "QR error: "
 msgstr ""
 
 #: ../qml/pages/SettingsPage.qml:17
