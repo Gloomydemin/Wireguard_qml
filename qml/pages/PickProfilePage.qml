@@ -10,8 +10,6 @@ UITK.Page {
     id: pickPage
 
     property bool hasActiveInterfaces: false
-    property bool pendingQrClipboard: false
-    property string lastClipboardText: ""
     property var appPalette: (typeof theme !== "undefined" && theme && theme.palette)
                              ? theme.palette
                              : ((typeof Theme !== "undefined" && Theme && Theme.palette)
@@ -72,63 +70,10 @@ UITK.Page {
                     })
     }
 
-    function looksLikeWireguard(text) {
-        if (!text || text.length < 10) {
-            return false
-        }
-        if (text.indexOf("[Interface]") !== -1) {
-            return true
-        }
-        if (text.indexOf("wireguard://") === 0 || text.indexOf("wg://") === 0) {
-            return true
-        }
-        if (text.indexOf("PrivateKey") !== -1 && text.indexOf("Endpoint") !== -1) {
-            return true
-        }
-        return false
-    }
-
-    function maybeImportFromClipboard() {
-        if (!pendingQrClipboard) {
-            return
-        }
-        var clip = ""
-        if (UITK.Clipboard && UITK.Clipboard.data) {
-            clip = UITK.Clipboard.data.text || ""
-        }
-        clip = clip.trim()
-        if (!clip || clip.length === 0) {
-            return
-        }
-        if (clip === lastClipboardText) {
-            return
-        }
-        lastClipboardText = clip
-        if (!looksLikeWireguard(clip)) {
-            return
-        }
-        pendingQrClipboard = false
-        qrClipboardTimer.stop()
-        python.call('vpn.instance.launch_app', ['wireguard.davidv.dev'], function(result) {})
-        toast.show(i18n.tr("QR detected. Importing..."))
-        importConfText(clip, null, null)
-    }
-
-    function openBarcodeReaderFlow() {
-        pendingQrClipboard = true
-        qrClipboardTimer.start()
-        python.call('vpn.instance.find_barcode_reader_app_id', [], function(appId) {
-            if (!appId) {
-                toast.show(i18n.tr("Barcode Reader not found. Open it manually, press Copy, then return."))
-                return
-            }
-            python.call('vpn.instance.launch_app', [appId], function(result) {
-                if (result && result.error) {
-                    toast.show(i18n.tr("Не удалось открыть Barcode Reader. Открой вручную, нажми Copy, затем вернись."))
-                    return
-                }
-                toast.show(i18n.tr("Scan QR, press Copy. WireGuard will open automatically."))
-            })
+    function openQrScanPage() {
+        var qrPage = stack.push(Qt.resolvedUrl("QrScanPage.qml"))
+        qrPage.qrDecoded.connect(function(payload) {
+            importConfText(payload, null, null)
         })
     }
 
@@ -329,7 +274,7 @@ Rectangle {
                 anchors.fill: parent
                 onClicked: {
                     addOptionsModal.close()
-                    openBarcodeReaderFlow()
+                    openQrScanPage()
                 }
             }
         }
@@ -388,20 +333,6 @@ Rectangle {
                 }
             }
         }
-    }
-}
-
-Timer {
-    id: qrClipboardTimer
-    interval: 800
-    repeat: true
-    running: false
-    onTriggered: {
-        if (!pendingQrClipboard) {
-            qrClipboardTimer.stop()
-            return
-        }
-        maybeImportFromClipboard()
     }
 }
 
@@ -794,6 +725,47 @@ Timer {
                             listmodel.setProperty(i, 'c_status', status)
                         }
                     })
+    }
+
+    // Floating action button (bottom-right) for add actions
+    Rectangle {
+        id: fabShadow
+        width: units.gu(6.6)
+        height: width
+        radius: width / 2
+        color: "#000000"
+        opacity: 0.25
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.rightMargin: units.gu(2.1)
+        anchors.bottomMargin: units.gu(2.1)
+        z: 20
+    }
+
+    Rectangle {
+        id: fabButton
+        width: units.gu(6)
+        height: width
+        radius: width / 2
+        color: "#1e88e5"
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.rightMargin: units.gu(2.4)
+        anchors.bottomMargin: units.gu(2.4)
+        z: 21
+
+        UITK.Icon {
+            anchors.centerIn: parent
+            name: "add"
+            width: units.gu(2.6)
+            height: width
+            color: "white"
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: addOptionsModal.open()
+        }
     }
 
     Python {
