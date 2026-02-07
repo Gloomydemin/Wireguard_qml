@@ -503,7 +503,7 @@ class Vpn:
                             with open(tmp_path, 'wb') as f:
                                 f.write(z.read(conf_name))
 
-                            # теперь по одному отдаем в parse_wireguard_conf
+                            # feed one-by-one into parse_wireguard_conf
                             profile_data = self.parse_wireguard_conf(tmp_path)
 
                             # profile_data = (profile_name, ip_address, private_key, iface, extra_routes, dns_servers, peers)
@@ -515,7 +515,7 @@ class Vpn:
                             dns_servers = profile_data[5]
                             peers = profile_data[6]
 
-                            # генерим уникальное имя профиля, если есть конфликт
+                            # generate unique profile name on conflict
                             original_name = profile_name
                             suffix = 1
                             while (PROFILES_DIR / profile_name).exists():
@@ -531,7 +531,7 @@ class Vpn:
                 return {"error": None, "profiles": imported_profiles}
 
             else:
-                # обычный одиночный conf
+                # plain single conf
                 profile_data = self.parse_wireguard_conf(path)
                 profile_name = profile_data[0]
                 ip_address = profile_data[1]
@@ -700,7 +700,7 @@ class Vpn:
 
     def get_wireguard_version(self):
         """
-        Возвращает информацию о версии vendored wireguard-go/wg.
+        Returns vendored wireguard-go/wg version info.
         """
         wg_bin = resolve_vendor_binary("wireguard")
         try:
@@ -716,7 +716,7 @@ class Vpn:
 
     def export_confs_zip(self):
         """
-        Экспортирует все config.ini из профилей в wireguard.zip в загрузки.
+        Export all config.ini from profiles into wireguard.zip in Downloads.
         """
         downloads = Path("/home/phablet/Downloads")
         downloads.mkdir(parents=True, exist_ok=True)
@@ -739,12 +739,12 @@ class Vpn:
                     found = True
                     name = cfg.parent.name + ".conf"
                     z.write(cfg, arcname=name)
-                # если config.ini нет, попробуем .conf из импортов
+                # if config.ini is missing, fall back to imported .conf
                 for conf in PROFILES_DIR.glob("*.conf"):
                     found = True
                     z.write(conf, arcname=conf.name)
                 if not found:
-                    return {"error": "Нет профилей для экспорта"}
+                    return {"error": "No profiles to export"}
             return {"error": None, "path": str(target)}
         except Exception as e:
             return {"error": str(e)}
@@ -854,7 +854,7 @@ class Vpn:
                 with path.open() as fd:
                     data = json.load(fd)
             except Exception:
-                continue  # пропускаем битые файлы
+                continue  # skip broken files
             raw_profiles[path.parent.name] = data
 
         active_by_privkey = {}
@@ -894,7 +894,7 @@ class Vpn:
                 iface = unique
                 used[iface] = name
 
-            # текущий статус (пока пустой, можно обновлять)
+            # current status (empty for now, can be updated)
             data['c_status'] = {}
             profiles.append(data)
 

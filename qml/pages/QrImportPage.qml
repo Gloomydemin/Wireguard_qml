@@ -13,7 +13,7 @@ UITK.Page {
 
     header: UITK.PageHeader {
         id: pageHeader
-        title: i18n.tr("Сканировать QR через Barcode Reader")
+        title: i18n.tr("Scan QR via Barcode Reader")
         trailingActionBar.actions: [
             UITK.Action {
                 iconName: "close"

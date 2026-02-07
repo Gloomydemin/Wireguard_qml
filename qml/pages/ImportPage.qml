@@ -47,7 +47,7 @@ UITK.Page {
                 return
             }
             
-            // Создаем замыкание для сохранения контекста
+            // Create closure to keep context
             var selectedPeer = peer
             selectedPeer.selectionType = ContentHub.ContentTransfer.Single
             var transfer = selectedPeer.request()
@@ -64,7 +64,7 @@ UITK.Page {
             if (transfer.state === ContentHub.ContentTransfer.Charged) {
                 processTransfer(transfer)
             } else {
-                // Подписываемся на изменение состояния
+                // Subscribe to state change
                 var stateChangedHandler = function() {
                     console.log("Transfer state changed:", transfer.state)
                     if (transfer.state === ContentHub.ContentTransfer.Charged) {
@@ -109,20 +109,20 @@ UITK.Page {
         var fileUrl = fileItem.url
         console.log("File URL:", fileUrl)
         
-        // Конвертируем URL в путь
+        // Convert URL to path
         var filePath = fileUrl.toString()
         
-        // Убираем file:// префикс если есть
+        // Remove file:// prefix if present
         if (filePath.startsWith("file://")) {
             filePath = filePath.substring(7)
         }
         
         console.log("Final file path:", filePath)
         
-        // Сначала отправляем сигнал, потом возвращаемся
+        // Emit signal first, then return
         importFinished(filePath)
         
-        // Задержка перед возвратом, чтобы сигнал успел обработаться
+        // Small delay so signal is processed before pop
         Qt.callLater(function() {
             pageStack.pop()
         })

@@ -47,6 +47,22 @@ msgstr "Подключение..."
 msgid "Disconnected"
 msgstr "Отключено"
 
+#: ../qml/pages/QrImportPage.qml:7
+msgid "Scan QR via Barcode Reader"
+msgstr "Сканировать QR через Barcode Reader"
+
+#: ../qml/pages/QrScanPage.qml:7 ../qml/pages/PickProfilePage.qml:500
+msgid "Scan QR code"
+msgstr "Сканировать QR-код"
+
+#: ../qml/pages/QrScanPage.qml:17
+msgid "Point the camera at the QR code"
+msgstr "Наведите камеру на QR-код"
+
+#: ../qml/pages/QrScanPage.qml:33
+msgid "Could not decode QR"
+msgstr "Не удалось распознать QR"
+
 #: ../qml/pages/PickProfilePage.qml:77
 msgid "Failed:"
 msgstr "Ошибка:"
@@ -66,6 +82,38 @@ msgstr "Редактировать профиль %1"
 #: ../qml/pages/ProfilePage.qml:53
 msgid "Profile name"
 msgstr "Имя профиля"
+
+#: ../qml/pages/PickProfilePage.qml:469
+msgid "WireGuard configuration file"
+msgstr "Файл конфигурации WireGuard"
+
+#: ../qml/pages/PickProfilePage.qml:478
+msgid "Quick import from camera"
+msgstr "Быстрый импорт из камеры"
+
+#: ../qml/pages/PickProfilePage.qml:487
+msgid "Create manually"
+msgstr "Создать вручную"
+
+#: ../qml/pages/PickProfilePage.qml:496
+msgid "Fill parameters manually"
+msgstr "Заполнить параметры вручную"
+
+#: ../qml/pages/PickProfilePage.qml:520
+msgid "Enter a name for the imported profile"
+msgstr "Введите имя для импортируемого профиля"
+
+#: ../qml/pages/PickProfilePage.qml:526 ../qml/pages/PickProfilePage.qml:534
+msgid "Cancel"
+msgstr "Отмена"
+
+#: ../qml/pages/PickProfilePage.qml:540
+msgid "Save"
+msgstr "Сохранить"
+
+#: ../qml/pages/PickProfilePage.qml:551
+msgid "Please enter a profile name"
+msgstr "Введите имя профиля"
 
 #: ../qml/pages/ProfilePage.qml:64
 msgid "Private Key"
@@ -128,16 +176,60 @@ msgid "Settings"
 msgstr "Настройки"
 
 #: ../qml/pages/SettingsPage.qml:43
-msgid "Use slow userspace implementation"
-msgstr "Использовать медленную реализацию в пользовательском пространстве"
+msgid "Export tunnels to zip file"
+msgstr "Экспорт туннелей в zip-файл"
 
 #: ../qml/pages/SettingsPage.qml:44
-msgid "It will be buggy, slow and probably crash."
-msgstr "Она будет содержать ошибки, медленно работать и, вероятно, завершаться аварийно."
+msgid "Zip file will be saved to Downloads"
+msgstr "Zip-файл будет сохранен в папке загрузок"
 
-#: ../qml/pages/SettingsPage.qml:52
-msgid "Try validating the kernel module again"
-msgstr "Попробовать повторно проверить модуль ядра"
+#: ../qml/pages/SettingsPage.qml:47
+msgid "Export error: "
+msgstr "Ошибка экспорта: "
+
+#: ../qml/pages/SettingsPage.qml:49
+msgid "Saved: "
+msgstr "Сохранено: "
+
+#: ../qml/pages/SettingsPage.qml:54
+msgid "View application logs"
+msgstr "Просмотр журналов приложения"
+
+#: ../qml/pages/SettingsPage.qml:55
+msgid "Logs may help with debugging"
+msgstr "Журналы могут помочь при отладке"
+
+#: ../qml/pages/SettingsPage.qml:61
+msgid "Use userspace implementation"
+msgstr "Использовать userspace реализацию"
+
+#: ../qml/pages/SettingsPage.qml:62
+msgid "May be slower and less stable"
+msgstr "Может быть медленнее и менее стабильной"
+
+#: ../qml/pages/SettingsPage.qml:75
+msgid "Allow control via external apps"
+msgstr "Разрешить управление через внешние приложения"
+
+#: ../qml/pages/SettingsPage.qml:76
+msgid "Not implemented yet"
+msgstr "Пока не реализовано"
+
+#: ../qml/pages/SettingsPage.qml:83
+msgid "Re-check kernel module"
+msgstr "Повторно проверить модуль ядра"
+
+#: ../qml/pages/SettingsPage.qml:84
+msgid "Run kernel and sudo check wizard"
+msgstr "Запустить мастер проверки ядра и прав sudo"
+
+#: ../qml/pages/SettingsPage.qml:91
+msgid "Sources and bug tracker"
+msgstr "Исходники и багтрекер"
+
+#: ../qml/pages/SettingsPage.qml:92
+msgid "Open project repository"
+msgstr "Открыть репозиторий проекта"
 
 #: ../qml/pages/WizardPage.qml:43
 msgid ""

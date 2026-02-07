@@ -19,14 +19,14 @@ clickable install --arch arm64 --ssh <device-ip>
 For emulator (x86_64): `clickable build --arch amd64`.
 
 ## Logs
-Application logs live in `~/.cache/wireguard.sysadmin/` on the device. Open the Settings page and tap “Просмотр журналов приложения” to jump there.
+Application logs live in `~/.cache/wireguard.sysadmin/` on the device. Open the Settings page and tap “View application logs” to jump there.
 
 ## Kernel module support
 If your device kernel ships WireGuard module, the app will use it. Otherwise it falls back to userspace.
 For adding WireGuard to a UT kernel, follow upstream instructions: https://www.wireguard.com/compilation/
 
 ## Export configs
-All profiles can be exported to `/home/phablet/Downloads/wireguard.zip` (auto-increments if the file exists) via Settings → “Экспорт туннелей в zip-файл”.
+All profiles can be exported to `/home/phablet/Downloads/wireguard.zip` (auto-increments if the file exists) via Settings → “Export tunnels to zip file”.
 
 ## Maintainer
 Sysadmin <bytebuddy@yandex.ru>

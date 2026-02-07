@@ -13,7 +13,7 @@ UITK.Page {
     property string capturePath: "/tmp/wg_qr_capture.jpg"
 
     header: UITK.PageHeader {
-        title: i18n.tr("Сканировать QR-код")
+        title: i18n.tr("Scan QR code")
         trailingActionBar.actions: [
             UITK.Action {
                 iconName: "close"
@@ -66,7 +66,7 @@ UITK.Page {
 
         Text {
             id: statusText
-            text: i18n.tr("Наведите камеру на QR-код")
+            text: i18n.tr("Point the camera at the QR code")
             color: "white"
             font.pixelSize: units.gu(1.7)
             horizontalAlignment: Text.AlignHCenter
@@ -113,7 +113,7 @@ UITK.Page {
                     return
                 }
                 decoding = false
-                statusText.text = i18n.tr("Не удалось распознать QR")
+                statusText.text = i18n.tr("Could not decode QR")
                 toast.show(i18n.tr("QR error: ") + result.error)
                 return
             }

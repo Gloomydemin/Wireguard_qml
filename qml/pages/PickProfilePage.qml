@@ -40,7 +40,7 @@ UITK.Page {
         ]
     }
 
-    // Импорт страницы с Content Hub
+    // Import page with Content Hub
     function openImportPage() {
         var importPage = stack.push(Qt.resolvedUrl("ImportPage.qml"), {
             "contentType": ContentHub.ContentType.Documents,
@@ -121,7 +121,7 @@ UITK.Page {
         })
     }
     
-    // Модальное окно для выбора способа добавления профиля
+    // Modal sheet to choose how to add a profile
 Rectangle {
     id: addOptionsModal
     width: parent.width
@@ -211,7 +211,7 @@ Rectangle {
                         color: textColor
                     }
                     Text {
-                        text: i18n.tr("Файл конфигурации WireGuard")
+                        text: i18n.tr("WireGuard configuration file")
                         font.pixelSize: units.gu(1.4)
                         color: tertiaryTextColor
                     }
@@ -259,13 +259,13 @@ Rectangle {
                     spacing: units.gu(0.2)
 
                     Text {
-                        text: i18n.tr("Сканировать QR-код")
+                        text: i18n.tr("Scan QR code")
                         font.pixelSize: units.gu(2)
                         font.bold: true
                         color: textColor
                     }
                     Text {
-                        text: i18n.tr("Быстрый импорт из камеры")
+                        text: i18n.tr("Quick import from camera")
                         font.pixelSize: units.gu(1.4)
                         color: tertiaryTextColor
                     }
@@ -313,13 +313,13 @@ Rectangle {
                     spacing: units.gu(0.2)
 
                     Text {
-                        text: i18n.tr("Создать вручную")
+                        text: i18n.tr("Create manually")
                         font.pixelSize: units.gu(2)
                         font.bold: true
                         color: textColor
                     }
                     Text {
-                        text: i18n.tr("Заполнить параметры вручную")
+                        text: i18n.tr("Fill parameters manually")
                         font.pixelSize: units.gu(1.4)
                         color: tertiaryTextColor
                     }
@@ -354,30 +354,30 @@ Component {
         signal accepted(string profileName)
         signal rejected()
 
-        title: i18n.tr("Имя профиля")
-        text: i18n.tr("Введите имя для импортируемого профиля")
+        title: i18n.tr("Profile name")
+        text: i18n.tr("Enter a name for the imported profile")
 
         UITK.TextField {
             id: qrProfileField
-            placeholderText: i18n.tr("Название профиля")
+            placeholderText: i18n.tr("Profile name")
         }
 
         RowLayout {
             spacing: units.gu(1)
             UITK.Button {
-                text: i18n.tr("Отмена")
+                text: i18n.tr("Cancel")
                 onClicked: {
                     qrDialog.rejected()
                     Popups.PopupUtils.close(qrDialog)
                 }
             }
             UITK.Button {
-                text: i18n.tr("Сохранить")
+                text: i18n.tr("Save")
                 color: UITK.LomiriColors.green
                 onClicked: {
                     var name = qrProfileField.text.trim()
                     if (!name || name.length === 0) {
-                        toast.show(i18n.tr("Введите имя профиля"))
+                        toast.show(i18n.tr("Please enter a profile name"))
                         return
                     }
                     qrDialog.accepted(name)

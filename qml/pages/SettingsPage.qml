@@ -16,14 +16,14 @@ UITK.Page {
         property bool allowExternalControl: false
     }
 
-    property string versionLabel: "WireGuard для Ubuntu Touch"
+    property string versionLabel: "WireGuard for Ubuntu Touch"
     property string backendLabel: ""
 
     Toast { id: toast }
 
     header: UITK.PageHeader {
         id: header
-        title: i18n.tr("Настройки")
+        title: i18n.tr("Settings")
 
         leadingActionBar.actions: [
             UITK.Action {
@@ -102,28 +102,28 @@ UITK.Page {
             }
 
             SettingsItem {
-                title: i18n.tr("Экспорт туннелей в zip-файл")
-                description: i18n.tr("Zip-файл будет сохранен в папке загрузок")
+                title: i18n.tr("Export tunnels to zip file")
+                description: i18n.tr("Zip file will be saved to Downloads")
                 onClicked: {
                     python.call('vpn.instance.export_confs_zip', [], function(res) {
                         if (res.error) {
-                            toast.show(i18n.tr("Ошибка экспорта: ") + res.error)
+                            toast.show(i18n.tr("Export error: ") + res.error)
                         } else {
-                            toast.show(i18n.tr("Сохранено: ") + res.path)
+                            toast.show(i18n.tr("Saved: ") + res.path)
                         }
                     })
                 }
             }
 
             SettingsItem {
-                title: i18n.tr("Просмотр журналов приложения")
-                description: i18n.tr("Журналы могут помочь при отладке")
+                title: i18n.tr("View application logs")
+                description: i18n.tr("Logs may help with debugging")
                 onClicked: Qt.openUrlExternally("file:///home/phablet/.cache/wireguard.sysadmin/")
             }
 
             SettingsItem {
-                title: i18n.tr("Использовать userspace реализацию")
-                description: i18n.tr("Может быть медленнее и менее стабильной")
+                title: i18n.tr("Use userspace implementation")
+                description: i18n.tr("May be slower and less stable")
                 control: UITK.Switch {
                     enabled: settings.canUseKmod
                     checked: settings.useUserspace
@@ -137,15 +137,15 @@ UITK.Page {
             }
 
             SettingsItem {
-                title: i18n.tr("Разрешить управление через внешние приложения")
-                description: i18n.tr("Пока не реализовано")
+                title: i18n.tr("Allow control via external apps")
+                description: i18n.tr("Not implemented yet")
                 control: null
                 descColor: "#ffb400"
             }
 
             SettingsItem {
-                title: i18n.tr("Повторно проверить модуль ядра")
-                description: i18n.tr("Запустить мастер проверки ядра и прав sudo")
+                title: i18n.tr("Re-check kernel module")
+                description: i18n.tr("Run kernel and sudo check wizard")
                 onClicked: {
                     stack.clear()
                     stack.push(Qt.resolvedUrl("WizardPage.qml"))
@@ -153,8 +153,8 @@ UITK.Page {
             }
 
             SettingsItem {
-                title: i18n.tr("Исходники и багтрекер")
-                description: i18n.tr("Открыть репозиторий проекта")
+                title: i18n.tr("Sources and bug tracker")
+                description: i18n.tr("Open project repository")
                 onClicked: Qt.openUrlExternally("https://github.com/Gloomydemin/Wireguard_qml")
             }
 
@@ -169,7 +169,7 @@ UITK.Page {
             importModule('vpn', function () {
                 python.call('vpn.instance.get_wireguard_version', [], function(res) {
                     var ver = res && res.version ? res.version : ""
-                    versionLabel = "WireGuard для Ubuntu Touch "
+                    versionLabel = "WireGuard for Ubuntu Touch "
                     backendLabel = res && res.backend ? res.backend : ""
                 })
             })

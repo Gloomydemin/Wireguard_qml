@@ -125,7 +125,7 @@ class Interface:
                 check=check
             )
 
-        # ⚠️ СНИМАЕМ DEFAULT ДО ИЗМЕНЕНИЙ
+        # Remove default routes before changes
         default_gw = self.get_default_gateway()
         real_iface = self.get_default_interface()
 
@@ -235,7 +235,7 @@ class Interface:
                 check=check
             )
 
-        # Загружаем профиль по имени интерфейса (без предположений про префиксы)
+        # Load profile by interface name (no assumptions about prefixes)
         profile = {}
         if PROFILES_DIR.exists():
             for profile_json in PROFILES_DIR.glob('*/profile.json'):
@@ -247,7 +247,7 @@ class Interface:
                     profile = data
                     break
 
-        # Проверяем, существует ли интерфейс
+        # Check if interface exists
         iface_exists = subprocess.run(
             ['ip', 'link', 'show', interface_name],
             stdout=subprocess.DEVNULL,
@@ -260,7 +260,7 @@ class Interface:
             sudo_run(['ip', 'link', 'set', 'down', 'dev', interface_name])
             sudo_run(['ip', 'link', 'del', 'dev', interface_name])
 
-        # Удаляем endpoint routes через физический интерфейс
+        # Drop endpoint routes via physical interface
         try:
             default_gw = self.get_default_gateway()
             real_iface = self.get_default_interface()
@@ -283,7 +283,7 @@ class Interface:
                     except Exception:
                         pass
 
-        # Восстанавливаем default route через физический интерфейс
+        # Restore default route via physical interface
         if default_gw and real_iface:
             try:
                 routes = subprocess.check_output(['ip', 'route', 'show', 'default']).decode()
