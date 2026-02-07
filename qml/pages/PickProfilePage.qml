@@ -11,6 +11,7 @@ UITK.Page {
     id: pickPage
 
     property bool hasActiveInterfaces: false
+    property bool statusInFlight: false
     property var appPalette: (typeof theme !== "undefined" && theme && theme.palette)
                              ? theme.palette
                              : ((typeof Theme !== "undefined" && Theme && Theme.palette)
@@ -666,7 +667,7 @@ Component {
 
     Timer {
         repeat: true
-        interval: 1000
+        interval: 2000
         running: listmodel.count > 0
         onTriggered: showStatus()
     }
@@ -767,10 +768,15 @@ Component {
         })
     }
     function showStatus() {
+        if (statusInFlight) {
+            return
+        }
+        statusInFlight = true
         python.call('vpn.instance.interface.current_status_by_interface', [],
                     function (all_status) {
                         if (!all_status || typeof all_status !== "object") {
                             hasActiveInterfaces = false
+                            statusInFlight = false
                             return
                         }
                         hasActiveInterfaces = Object.keys(all_status).length > 0
@@ -813,6 +819,7 @@ Component {
                             }
                             listmodel.setProperty(i, 'c_status', status)
                         }
+                        statusInFlight = false
                     })
     }
 

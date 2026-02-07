@@ -208,7 +208,23 @@ class Vpn:
     def _disconnect_other_interfaces(self, keep_interface):
         if not self.interface:
             return
-        # First, disconnect any known profile interfaces (cheap and safe).
+        # Prefer disconnecting actual existing wireguard interfaces only.
+        try:
+            active_ifaces = self.interface.list_wireguard_interfaces()
+        except Exception:
+            active_ifaces = []
+
+        if active_ifaces:
+            for iface in active_ifaces:
+                if iface == keep_interface:
+                    continue
+                try:
+                    self.interface.disconnect(iface)
+                except Exception:
+                    pass
+            return
+
+        # Fallback: disconnect known profile interfaces (slower).
         try:
             profiles = self._load_profiles()
         except Exception:
@@ -216,18 +232,6 @@ class Vpn:
         for data in profiles.values():
             iface = data.get('interface_name')
             if not iface or iface == keep_interface:
-                continue
-            try:
-                self.interface.disconnect(iface)
-            except Exception:
-                pass
-        # Then, also disconnect any active interfaces we can discover.
-        try:
-            statuses = self.interface.current_status_by_interface()
-        except Exception:
-            return
-        for iface in list(statuses.keys()):
-            if iface == keep_interface:
                 continue
             try:
                 self.interface.disconnect(iface)

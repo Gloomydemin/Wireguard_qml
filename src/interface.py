@@ -23,10 +23,12 @@ class Interface:
 
     def _connect(self, profile, config_file, use_kmod):
         interface_name = profile['interface_name']
-        self.disconnect(interface_name)
+        if self.interface_exists(interface_name):
+            self.disconnect(interface_name)
 
         if use_kmod:
-            self.stop_userspace_daemons()
+            if self.userspace_running():
+                self.stop_userspace_daemons()
             serve_pwd = self.serve_sudo_pwd()
             subprocess.run(['/usr/bin/sudo', '-S', 'ip', 'link', 'add', interface_name, 'type', 'wireguard'],
                             stdin=serve_pwd.stdout,
@@ -35,7 +37,8 @@ class Interface:
             if err:
                 return err
         else:
-            self.stop_userspace_daemons()
+            if self.userspace_running():
+                self.stop_userspace_daemons()
             err = self.check_userspace_binary()
             if err:
                 return err
@@ -93,7 +96,20 @@ class Interface:
             haystack = p.stdout.decode(errors='ignore')
             return str(WIREGUARD_GO_PATH) in haystack
 
+    def interface_exists(self, interface_name):
+        try:
+            return subprocess.run(
+                ['ip', 'link', 'show', interface_name],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False
+            ).returncode == 0
+        except Exception:
+            return False
+
     def stop_userspace_daemons(self):
+        if not self.userspace_running():
+            return
         serve_pwd = self.serve_sudo_pwd()
         subprocess.run(
             ['/usr/bin/sudo', '-S', 'pkill', '-f', str(WIREGUARD_GO_PATH)],
@@ -112,6 +128,38 @@ class Interface:
         p = subprocess.check_output(['ip', 'route', 'show', 'default']).decode()
         return p.split('dev')[1].split()[0]
 
+    def list_wireguard_interfaces(self):
+        try:
+            p = subprocess.run(
+                ['ip', '-o', 'link', 'show', 'type', 'wireguard'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False
+            )
+            if p.returncode != 0:
+                raise RuntimeError("no wireguard type support")
+            lines = p.stdout.decode(errors='ignore').splitlines()
+        except Exception:
+            try:
+                p = subprocess.run(
+                    ['ip', '-o', 'link', 'show'],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False
+                )
+                lines = p.stdout.decode(errors='ignore').splitlines()
+            except Exception:
+                return []
+
+        ifaces = []
+        for line in lines:
+            parts = line.split(':', 2)
+            if len(parts) < 2:
+                continue
+            name = parts[1].strip().split('@')[0]
+            if name.startswith('wg'):
+                ifaces.append(name)
+        return ifaces
 
 
     def config_interface(self, profile, config_file):
