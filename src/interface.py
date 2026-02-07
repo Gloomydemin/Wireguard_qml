@@ -146,14 +146,17 @@ class Interface:
             return err
 
         # 3. addresses (support multiple comma/space-separated)
-        addr_list = re.split(r'[,\s]+', profile.get('ip_address', ''))
-        addr_list = [a.strip() for a in addr_list if a.strip()]
-        if addr_list:
-            # replace first
-            sudo_run(['ip', 'address', 'replace', addr_list[0], 'dev', interface_name])
-            # add the rest
-            for extra_addr in addr_list[1:]:
-                sudo_run(['ip', 'address', 'add', extra_addr, 'dev', interface_name], check=False)
+        try:
+            addr_list = re.split(r'[,\s]+', profile.get('ip_address', ''))
+            addr_list = [a.strip() for a in addr_list if a.strip()]
+            if addr_list:
+                # replace first
+                sudo_run(['ip', 'address', 'replace', addr_list[0], 'dev', interface_name])
+                # add the rest
+                for extra_addr in addr_list[1:]:
+                    sudo_run(['ip', 'address', 'add', extra_addr, 'dev', interface_name], check=False)
+        except Exception as e:
+            return f"IP setup failed: {e}"
 
         # 4. interface up
         sudo_run(['ip', 'link', 'set', 'up', 'dev', interface_name])
@@ -323,12 +326,8 @@ class Interface:
                     stdin=stdin,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    timeout=2,
                     check=False
                 )
-            except subprocess.TimeoutExpired:
-                print('`wg show all dump` timed out')
-                return []
             except Exception as e:
                 print('`wg show all dump` failed:', e)
                 return []

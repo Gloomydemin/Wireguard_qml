@@ -23,9 +23,7 @@ UITK.Page {
     property color baseColor: appPalette ? appPalette.normal.base : "#ffffff"
     property color textColor: appPalette ? appPalette.normal.foregroundText : "#111111"
     property color tertiaryTextColor: appPalette ? appPalette.normal.backgroundTertiaryText : "#888888"
-    property bool useUserspaceEffective: (typeof root !== "undefined" && root.settings)
-                                         ? root.settings.useUserspace
-                                         : settings.useUserspace
+    property bool useUserspaceEffective: settings.useUserspace
     property string backendLabel: useUserspaceEffective
                                   ? i18n.tr("Backend: userspace (wireguard-go)")
                                   : i18n.tr("Backend: kernel module")
@@ -808,8 +806,10 @@ Component {
         })
     }
     function showStatus() {
+        if (!listmodel) return
         python.call('vpn.instance.interface.current_status_by_interface', [],
                     function (all_status) {
+                        if (!listmodel) return
                         all_status = all_status || {}
                         hasActiveInterfaces = Object.keys(all_status).length > 0
                         const keys = Object.keys(all_status)
@@ -900,6 +900,8 @@ Component {
         Component.onCompleted: {
             addImportPath(Qt.resolvedUrl('../../src/'))
             importModule('vpn', function () {
+                // синхронизируем флаг сразу при загрузке
+                settings.useUserspace = settings.useUserspace
                 python.call('vpn.instance.set_pwd', [root.pwd], function(result){});
                 // First show UI promptly, then clean up userspace in background
                 populateProfiles(function() {
