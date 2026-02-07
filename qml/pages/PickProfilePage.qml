@@ -18,15 +18,10 @@ UITK.Page {
                                 : ((UITK.Theme && UITK.Theme.palette)
                                    ? UITK.Theme.palette
                                    : null))
-    property bool lastImportWasZip: false
     property color bgColor: appPalette ? appPalette.normal.background : "#f7f7f7"
     property color baseColor: appPalette ? appPalette.normal.base : "#ffffff"
     property color textColor: appPalette ? appPalette.normal.foregroundText : "#111111"
     property color tertiaryTextColor: appPalette ? appPalette.normal.backgroundTertiaryText : "#888888"
-    property bool useUserspaceEffective: settings.useUserspace
-    property string backendLabel: useUserspaceEffective
-                                  ? i18n.tr("Backend: userspace (wireguard-go)")
-                                  : i18n.tr("Backend: kernel module")
 
     Settings {
         id: settings
@@ -45,34 +40,6 @@ UITK.Page {
         ]
     }
 
-    Rectangle {
-        anchors.top: header.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: units.gu(3.2)
-        color: "transparent"
-        Row {
-            anchors.left: parent.left
-            anchors.leftMargin: units.gu(2)
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: units.gu(0.6)
-            Rectangle {
-                radius: units.gu(1)
-                color: settings.useUserspace ? "#ffd54f" : "#81c784"
-                height: units.gu(2.4)
-                width: text.implicitWidth + units.gu(2.4)
-                anchors.verticalCenter: parent.verticalCenter
-                Text {
-                    id: text
-                    anchors.centerIn: parent
-                    color: "#000000"
-                    font.pixelSize: units.gu(1.4)
-                    text: backendLabel
-                }
-            }
-        }
-    }
-
     // Import page with Content Hub
     function openImportPage() {
         var importPage = stack.push(Qt.resolvedUrl("ImportPage.qml"), {
@@ -87,7 +54,6 @@ UITK.Page {
     
     function importConfPath(filePath) {
         console.log("Importing file:", filePath)
-        lastImportWasZip = filePath && filePath.toLowerCase().endsWith(".zip")
         importProgressModal.open()
         python.call('vpn.instance.import_conf', [filePath], function(result) {
             handleImportResult(result)
@@ -95,7 +61,6 @@ UITK.Page {
     }
 
     function importConfText(confText, profileName, interfaceName) {
-        lastImportWasZip = false
         var nameOverride = (profileName && profileName.length > 0) ? profileName : null
         var ifaceOverride = (interfaceName && interfaceName.length > 0) ? interfaceName : null
         importProgressModal.open()
@@ -129,17 +94,10 @@ UITK.Page {
             return
         }
         console.log("Import success:", result)
-        var count = (result.profiles && result.profiles.length) ? result.profiles.length : 0
-        toast.show(count > 1
-                   ? i18n.tr("Imported %1 profiles").arg(count)
-                   : i18n.tr("Profile imported successfully"))
+        toast.show(i18n.tr("Profile imported successfully"))
 
         populateProfiles(function() {
             if (!result.profiles || result.profiles.length === 0) {
-                return
-            }
-            // Для zip или множественного импорта остаёмся на списке
-            if (lastImportWasZip || result.profiles.length !== 1) {
                 return
             }
             const importedName = result.profiles[0]
@@ -490,7 +448,6 @@ Component {
 
     ListView {
         anchors.top: header.bottom
-        anchors.topMargin: units.gu(3.2)
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
@@ -512,9 +469,6 @@ Component {
             }
             property var status: statusObj()
             onClicked: {
-                if (!listmodel || index < 0) {
-                    return
-                }
                 var status = statusObj()
                 if (!status.init) {
                     // визуально показать, что начали подключение
@@ -702,7 +656,7 @@ Component {
 
     Timer {
         repeat: true
-        interval: hasActiveInterfaces ? 1500 : 5000
+        interval: 1000
         running: listmodel.count > 0
         onTriggered: showStatus()
     }
@@ -788,9 +742,6 @@ Component {
     function populateProfiles(onDone) {
         python.call('vpn.instance.list_profiles', [], function (profiles) {
             // сортировка по имени
-            if (!profiles || !profiles.sort) {
-                profiles = []
-            }
             profiles.sort(function(a, b) {
                 return (a.profile_name || "").toLowerCase().localeCompare((b.profile_name || "").toLowerCase());
             });
@@ -806,11 +757,8 @@ Component {
         })
     }
     function showStatus() {
-        if (!listmodel) return
         python.call('vpn.instance.interface.current_status_by_interface', [],
                     function (all_status) {
-                        if (!listmodel) return
-                        all_status = all_status || {}
                         hasActiveInterfaces = Object.keys(all_status).length > 0
                         const keys = Object.keys(all_status)
                         var byPriv = {}
@@ -898,10 +846,12 @@ Component {
     Python {
         id: python
         Component.onCompleted: {
+            if (typeof root !== "undefined" && root.settings) {
+                settings.useUserspace = root.settings.useUserspace
+                settings.canUseKmod = root.settings.canUseKmod
+            }
             addImportPath(Qt.resolvedUrl('../../src/'))
             importModule('vpn', function () {
-                // синхронизируем флаг сразу при загрузке
-                settings.useUserspace = settings.useUserspace
                 python.call('vpn.instance.set_pwd', [root.pwd], function(result){});
                 // First show UI promptly, then clean up userspace in background
                 populateProfiles(function() {
@@ -919,17 +869,6 @@ Component {
                     })
                 }
             })
-        }
-    }
-
-    // Keep local settings in sync with root (WizardPage may change them)
-    Connections {
-        target: (typeof root !== "undefined") ? root.settings : null
-        function onUseUserspaceChanged() {
-            settings.useUserspace = root.settings.useUserspace
-        }
-        function onCanUseKmodChanged() {
-            settings.canUseKmod = root.settings.canUseKmod
         }
     }
 }

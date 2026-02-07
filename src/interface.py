@@ -145,18 +145,8 @@ class Interface:
             log.error(err)
             return err
 
-        # 3. addresses (support multiple comma/space-separated)
-        try:
-            addr_list = re.split(r'[,\s]+', profile.get('ip_address', ''))
-            addr_list = [a.strip() for a in addr_list if a.strip()]
-            if addr_list:
-                # replace first
-                sudo_run(['ip', 'address', 'replace', addr_list[0], 'dev', interface_name])
-                # add the rest
-                for extra_addr in addr_list[1:]:
-                    sudo_run(['ip', 'address', 'add', extra_addr, 'dev', interface_name], check=False)
-        except Exception as e:
-            return f"IP setup failed: {e}"
+        # 3. address
+        sudo_run(['ip', 'address', 'replace', profile['ip_address'], 'dev', interface_name])
 
         # 4. interface up
         sudo_run(['ip', 'link', 'set', 'up', 'dev', interface_name])
@@ -193,9 +183,7 @@ class Interface:
         # 6. AllowedIPs
         add_default = False
         for peer in profile.get('peers', []):
-            raw_prefixes = peer.get('allowed_prefixes', '')
-            prefixes = re.split(r'[,\s]+', raw_prefixes)
-            for prefix in prefixes:
+            for prefix in peer.get('allowed_prefixes', '').split(','):
                 prefix = prefix.strip()
                 if not prefix:
                     continue
@@ -228,10 +216,7 @@ class Interface:
 
     def disconnect(self, interface_name):
         CONFIG_DIR = Path('/home/phablet/.local/share/wireguard.sysadmin')
-        LEGACY_CONFIG_DIR = Path('/home/phablet/.local/share/wireguard.davidv.dev')
         PROFILES_DIR = CONFIG_DIR / 'profiles'
-        if not PROFILES_DIR.exists() and LEGACY_CONFIG_DIR.exists():
-            PROFILES_DIR = LEGACY_CONFIG_DIR / 'profiles'
 
         # Always stop userspace daemons to avoid stale wireguard-go processes
         try:
@@ -326,10 +311,11 @@ class Interface:
                     stdin=stdin,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
+                    timeout=2,
                     check=False
                 )
-            except Exception as e:
-                print('`wg show all dump` failed:', e)
+            except subprocess.TimeoutExpired:
+                print('`wg show all dump` timed out')
                 return []
             if p.returncode != 0:
                 print('Failed to run `wg show all dump`:')
