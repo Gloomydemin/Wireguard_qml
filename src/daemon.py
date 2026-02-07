@@ -16,9 +16,6 @@ from vendor_paths import resolve_vendor_binary
 WG_PATH = resolve_vendor_binary("wireguard")
 APP_ID = 'wireguard.sysadmin'
 LOG_DIR = Path(f'/home/phablet/.cache/{APP_ID}')
-OLD_LOG_DIR = Path('/home/phablet/.cache/wireguard.davidv.dev')
-if not LOG_DIR.exists() and OLD_LOG_DIR.exists():
-    LOG_DIR = OLD_LOG_DIR
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 log = None
 

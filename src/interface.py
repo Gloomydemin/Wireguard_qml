@@ -216,9 +216,6 @@ class Interface:
 
     def disconnect(self, interface_name):
         CONFIG_DIR = Path('/home/phablet/.local/share/wireguard.sysadmin')
-        OLD_CONFIG_DIR = Path('/home/phablet/.local/share/wireguard.davidv.dev')
-        if not CONFIG_DIR.exists() and OLD_CONFIG_DIR.exists():
-            CONFIG_DIR = OLD_CONFIG_DIR
         PROFILES_DIR = CONFIG_DIR / 'profiles'
 
         # Always stop userspace daemons to avoid stale wireguard-go processes

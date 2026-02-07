@@ -25,15 +25,9 @@ WG_PATH = resolve_vendor_binary("wg")
 
 APP_ID = 'wireguard.sysadmin'
 CONFIG_DIR = Path(f'/home/phablet/.local/share/{APP_ID}')
-OLD_CONFIG_DIR = Path('/home/phablet/.local/share/wireguard.davidv.dev')
-if not CONFIG_DIR.exists() and OLD_CONFIG_DIR.exists():
-    CONFIG_DIR = OLD_CONFIG_DIR
 PROFILES_DIR = CONFIG_DIR / 'profiles'
 
 LOG_DIR = Path(f'/home/phablet/.cache/{APP_ID}')
-OLD_LOG_DIR = Path('/home/phablet/.cache/wireguard.davidv.dev')
-if not LOG_DIR.exists() and OLD_LOG_DIR.exists():
-    LOG_DIR = OLD_LOG_DIR
 
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 PROFILES_DIR.mkdir(parents=True, exist_ok=True)
