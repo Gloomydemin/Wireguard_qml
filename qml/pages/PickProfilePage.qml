@@ -909,4 +909,15 @@ Component {
             })
         }
     }
+
+    // Keep local settings in sync with root (WizardPage may change them)
+    Connections {
+        target: (typeof root !== "undefined") ? root.settings : null
+        function onUseUserspaceChanged() {
+            settings.useUserspace = root.settings.useUserspace
+        }
+        function onCanUseKmodChanged() {
+            settings.canUseKmod = root.settings.canUseKmod
+        }
+    }
 }

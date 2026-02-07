@@ -145,8 +145,15 @@ class Interface:
             log.error(err)
             return err
 
-        # 3. address
-        sudo_run(['ip', 'address', 'replace', profile['ip_address'], 'dev', interface_name])
+        # 3. addresses (support multiple comma/space-separated)
+        addr_list = re.split(r'[,\s]+', profile.get('ip_address', ''))
+        addr_list = [a.strip() for a in addr_list if a.strip()]
+        if addr_list:
+            # replace first
+            sudo_run(['ip', 'address', 'replace', addr_list[0], 'dev', interface_name])
+            # add the rest
+            for extra_addr in addr_list[1:]:
+                sudo_run(['ip', 'address', 'add', extra_addr, 'dev', interface_name], check=False)
 
         # 4. interface up
         sudo_run(['ip', 'link', 'set', 'up', 'dev', interface_name])
