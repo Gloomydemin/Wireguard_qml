@@ -377,6 +377,10 @@ class Vpn:
         def _split_csv(val):
             return [x.strip() for x in str(val or "").split(",") if x.strip()]
 
+        ip_address = ip_address.strip()
+        if not ip_address:
+            return 'Address is required in [Interface]'
+
         try:
             for addr in _split_csv(ip_address):
                 ip_network(addr, strict=False)
@@ -465,6 +469,7 @@ class Vpn:
             fd.write(textwrap.dedent('''
             [Interface]
             #Profile = {profile_name}
+            Address = {ip_address}
             PrivateKey = {private_key}
             ''').format_map(profile))
             for peer in peers:
@@ -516,6 +521,9 @@ class Vpn:
                             dns_servers = profile_data[5]
                             peers = profile_data[6]
 
+                            if not ip_address.strip():
+                                return {"error": f"{conf_name} is missing Address in [Interface]"}
+
                             # generate unique profile name on conflict
                             original_name = profile_name
                             suffix = 1
@@ -541,6 +549,9 @@ class Vpn:
                 extra_routes = profile_data[4]
                 dns_servers = profile_data[5]
                 peers = profile_data[6]
+
+                if not ip_address.strip():
+                    return {"error": "Config is missing Address in [Interface]"}
 
                 error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, peers)
                 if error:
