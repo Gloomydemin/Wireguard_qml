@@ -469,7 +469,6 @@ class Vpn:
             fd.write(textwrap.dedent('''
             [Interface]
             #Profile = {profile_name}
-            Address = {ip_address}
             PrivateKey = {private_key}
             ''').format_map(profile))
             for peer in peers:

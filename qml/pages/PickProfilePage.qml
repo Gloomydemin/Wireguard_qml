@@ -769,6 +769,10 @@ Component {
     function showStatus() {
         python.call('vpn.instance.interface.current_status_by_interface', [],
                     function (all_status) {
+                        if (!all_status || typeof all_status !== "object") {
+                            hasActiveInterfaces = false
+                            return
+                        }
                         hasActiveInterfaces = Object.keys(all_status).length > 0
                         const keys = Object.keys(all_status)
                         var byPriv = {}

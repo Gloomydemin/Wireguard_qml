@@ -318,16 +318,19 @@ class Interface:
                 sudo_cmd = ['/usr/bin/sudo', '-n']
                 stdin = None
             try:
+                cmd = [str(WG_PATH), 'show', 'all', 'dump']
+                # Prefer external timeout to avoid PermissionError on kill
+                if Path('/usr/bin/timeout').exists():
+                    cmd = ['/usr/bin/timeout', '2'] + cmd
                 p = subprocess.run(
-                    sudo_cmd + [str(WG_PATH), 'show', 'all', 'dump'],
+                    sudo_cmd + cmd,
                     stdin=stdin,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    timeout=2,
                     check=False
                 )
-            except subprocess.TimeoutExpired:
-                print('`wg show all dump` timed out')
+            except Exception as e:
+                print('`wg show all dump` failed:', e)
                 return []
             if p.returncode != 0:
                 print('Failed to run `wg show all dump`:')
