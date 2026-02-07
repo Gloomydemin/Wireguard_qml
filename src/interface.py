@@ -183,7 +183,9 @@ class Interface:
         # 6. AllowedIPs
         add_default = False
         for peer in profile.get('peers', []):
-            for prefix in peer.get('allowed_prefixes', '').split(','):
+            prefixes = re.split(r'[, 	
+]+', peer.get('allowed_prefixes', ''))
+            for prefix in prefixes:
                 prefix = prefix.strip()
                 if not prefix:
                     continue
@@ -216,7 +218,10 @@ class Interface:
 
     def disconnect(self, interface_name):
         CONFIG_DIR = Path('/home/phablet/.local/share/wireguard.sysadmin')
+        LEGACY_CONFIG_DIR = Path('/home/phablet/.local/share/wireguard.davidv.dev')
         PROFILES_DIR = CONFIG_DIR / 'profiles'
+        if not PROFILES_DIR.exists() and LEGACY_CONFIG_DIR.exists():
+            PROFILES_DIR = LEGACY_CONFIG_DIR / 'profiles'
 
         # Always stop userspace daemons to avoid stale wireguard-go processes
         try:

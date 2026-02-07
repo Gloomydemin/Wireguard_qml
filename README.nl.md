@@ -3,7 +3,6 @@
 Fork van het originele wireguard_qml, aangepast en onderhouden voor Ubuntu‑Touch‑communityapparaten.
 
 ## Functies
-- Meerdere profielen (één tegelijk actief)
 - Userspace‑fallback (wireguard‑go) als de kernelmodule ontbreekt
 - QR/zip/import‑support voor .conf‑configuraties
 - Extra routes en DNS per profiel

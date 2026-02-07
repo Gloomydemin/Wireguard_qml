@@ -25,11 +25,31 @@ WG_PATH = resolve_vendor_binary("wg")
 
 APP_ID = 'wireguard.sysadmin'
 CONFIG_DIR = Path(f'/home/phablet/.local/share/{APP_ID}')
-PROFILES_DIR = CONFIG_DIR / 'profiles'
-
+OLD_CONFIG_DIR = Path('/home/phablet/.local/share/wireguard.davidv.dev')
 LOG_DIR = Path(f'/home/phablet/.cache/{APP_ID}')
+OLD_LOG_DIR = Path('/home/phablet/.cache/wireguard.davidv.dev')
 
+
+def migrate_legacy_paths():
+    """
+    Best-effort migration of old storage paths -> new APP_ID.
+    Runs without sudo; safe to re-run.
+    """
+    if not CONFIG_DIR.exists() and OLD_CONFIG_DIR.exists():
+        try:
+            shutil.copytree(OLD_CONFIG_DIR, CONFIG_DIR, dirs_exist_ok=True)
+        except Exception:
+            pass
+    if not LOG_DIR.exists() and OLD_LOG_DIR.exists():
+        try:
+            shutil.copytree(OLD_LOG_DIR, LOG_DIR, dirs_exist_ok=True)
+        except Exception:
+            pass
+
+
+migrate_legacy_paths()
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+PROFILES_DIR = CONFIG_DIR / 'profiles'
 PROFILES_DIR.mkdir(parents=True, exist_ok=True)
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
