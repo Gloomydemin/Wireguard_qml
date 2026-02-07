@@ -16,7 +16,7 @@ import urllib.parse
 import interface
 import daemon
 
-from ipaddress import IPv4Network, IPv4Address
+from ipaddress import ip_network
 from pathlib import Path
 
 from vendor_paths import resolve_vendor_binary
@@ -374,10 +374,14 @@ class Vpn:
         if len(_pub) != 44:
             return 'Bad private key: ' + _pub
 
+        def _split_csv(val):
+            return [x.strip() for x in str(val or "").split(",") if x.strip()]
+
         try:
-            IPv4Network(ip_address, strict=False)
+            for addr in _split_csv(ip_address):
+                ip_network(addr, strict=False)
         except Exception as e:
-            return 'Bad ip address: ' + str(e)
+            return 'Bad ip address {}: {}'.format(addr, e)
 
         try:
             base64.b64decode(private_key)
@@ -406,26 +410,23 @@ class Vpn:
                 return 'Bad peer ({name}) preshared key'.format_map(peer)
 
             allowed_prefixes = peer['allowed_prefixes']
-            for allowed_prefix in allowed_prefixes.split(','):
-                allowed_prefix = allowed_prefix.strip()
+            for allowed_prefix in _split_csv(allowed_prefixes):
                 try:
-                    IPv4Network(allowed_prefix, strict=False)
+                    ip_network(allowed_prefix, strict=False)
                 except Exception as e:
                     return 'Bad peer ({name}) prefix '.format_map(peer) + allowed_prefix + ': ' + str(e)
 
         if extra_routes:
-            for route in extra_routes.split(','):
-                route = route.strip()
+            for route in _split_csv(extra_routes):
                 try:
-                    IPv4Network(route, strict=False)
+                    ip_network(route, strict=False)
                 except Exception as e:
                     return 'Bad route ' + route + ': ' + str(e)
 
         if dns_servers:
-            for dns in dns_servers.split(','):
-                dns = dns.strip()
+            for dns in _split_csv(dns_servers):
                 try:
-                    IPv4Network(dns, strict=False)
+                    ip_network(dns, strict=False)
                 except Exception as e:
                     return 'Bad dns ' + dns + ': ' + str(e)
 
