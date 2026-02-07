@@ -40,6 +40,37 @@ UITK.Page {
         ]
     }
 
+    // Backend badge (kernel/userspace)
+    Rectangle {
+        anchors.top: header.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: units.gu(3.2)
+        color: "transparent"
+        Row {
+            anchors.left: parent.left
+            anchors.leftMargin: units.gu(2)
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: units.gu(0.6)
+            Rectangle {
+                radius: units.gu(1)
+                color: settings.useUserspace ? "#ffd54f" : "#81c784"
+                height: units.gu(2.4)
+                width: badgeText.implicitWidth + units.gu(2.4)
+                anchors.verticalCenter: parent.verticalCenter
+                Text {
+                    id: badgeText
+                    anchors.centerIn: parent
+                    color: "#000000"
+                    font.pixelSize: units.gu(1.4)
+                    text: settings.useUserspace
+                          ? i18n.tr("Backend: userspace (wireguard-go)")
+                          : i18n.tr("Backend: kernel module")
+                }
+            }
+        }
+    }
+
     // Import page with Content Hub
     function openImportPage() {
         var importPage = stack.push(Qt.resolvedUrl("ImportPage.qml"), {
@@ -448,6 +479,7 @@ Component {
 
     ListView {
         anchors.top: header.bottom
+        anchors.topMargin: units.gu(3.2)
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
@@ -469,6 +501,7 @@ Component {
             }
             property var status: statusObj()
             onClicked: {
+                if (!listmodel) return
                 var status = statusObj()
                 if (!status.init) {
                     // визуально показать, что начали подключение
@@ -869,6 +902,16 @@ Component {
                     })
                 }
             })
+        }
+    }
+
+    Connections {
+        target: (typeof root !== "undefined") ? root.settings : null
+        function onUseUserspaceChanged() {
+            settings.useUserspace = root.settings.useUserspace
+        }
+        function onCanUseKmodChanged() {
+            settings.canUseKmod = root.settings.canUseKmod
         }
     }
 }

@@ -145,8 +145,15 @@ class Interface:
             log.error(err)
             return err
 
-        # 3. address
-        sudo_run(['ip', 'address', 'replace', profile['ip_address'], 'dev', interface_name])
+        # 3. address (support multiple addresses separated by comma/space)
+        addr_list = [a.strip() for a in re.split(r'[,\s]+', profile.get('ip_address', '')) if a.strip()]
+        if not addr_list:
+            return "No address configured"
+        # replace first
+        sudo_run(['ip', 'address', 'replace', addr_list[0], 'dev', interface_name])
+        # add remaining
+        for extra in addr_list[1:]:
+            sudo_run(['ip', 'address', 'add', extra, 'dev', interface_name], check=False)
 
         # 4. interface up
         sudo_run(['ip', 'link', 'set', 'up', 'dev', interface_name])
