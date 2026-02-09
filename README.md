@@ -9,6 +9,8 @@ Fork of the original wireguard_qml adapted and maintained for Ubuntu Touch commu
 - Userspace fallback (wireguard-go) when kernel module unavailable
 - QR/zip/import support for .conf configs
 - Extra routes and DNS per profile
+- PreUp hooks (run commands before interface up)
+- Encrypted private key storage (password-based)
 
 ## Building & installing
 Prerequisites: `clickable` 8.6+, Docker available, Ubuntu SDK 20.04 image.
@@ -29,6 +31,23 @@ For adding WireGuard to a UT kernel, follow upstream instructions: https://www.w
 
 ## Export configs
 All profiles can be exported to `/home/phablet/Downloads/wireguard.zip` (auto-increments if the file exists) via Settings → “Export tunnels to zip file”.
+
+## PreUp (usage)
+PreUp runs **before** the interface is brought up. It is useful for setup tasks (e.g., add custom routes, set firewall marks, etc.).
+
+Usage:
+1. Open a profile.
+2. Fill the “PreUp command” field.
+3. You can provide multiple commands separated by `;` or on new lines.
+
+Example:
+```
+ip rule add fwmark 51820 table 51820
+ip route add default dev wg0 table 51820
+```
+
+## Changes & function map
+See `docs/CHANGES.md` for a full list of modifications and functions that were added or changed.
 
 ## Maintainer
 Sysadmin <bytebuddy@yandex.ru>
