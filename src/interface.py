@@ -309,6 +309,17 @@ class Interface:
         for extra_addr in addr_list[1:]:
             sudo_run(['ip', 'address', 'add', extra_addr, 'dev', interface_name], check=False)
 
+        # PreUp hooks (wg-quick compatible)
+        pre_up = (profile.get('pre_up') or '').strip()
+        if pre_up:
+            for cmd in [c.strip() for c in re.split(r'[;\\n]+', pre_up) if c.strip()]:
+                log.info('Running PreUp: %s', cmd)
+                res = sudo_run(['/bin/sh', '-c', cmd], check=False)
+                if res.returncode != 0:
+                    err = f'PreUp failed: {cmd}'
+                    log.error(err)
+                    return err
+
         # 4. interface up
         sudo_run(['ip', 'link', 'set', 'up', 'dev', interface_name])
         log.info('Interface up')

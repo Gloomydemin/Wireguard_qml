@@ -16,6 +16,7 @@ UITK.Page {
     property string extraRoutes
     property string dnsServers
     property string interfaceName
+    property string preUp
 
     property variant peers: []
 
@@ -115,6 +116,15 @@ UITK.Page {
                     onChanged: {
                         errorMsg = ''
                         dnsServers = text
+                    }
+                }
+                MyTextField {
+                    title: i18n.tr("PreUp command")
+                    text: preUp
+                    placeholder: i18n.tr("Optional command to run before interface up")
+                    onChanged: {
+                        errorMsg = ''
+                        preUp = text
                     }
                 }
             }
@@ -252,7 +262,7 @@ UITK.Page {
                     }
 
                     python.call('vpn.instance.save_profile',
-                                [profileName, ipAddress, privateKey, interfaceName, extraRoutes, dnsServers, _peers],
+                                [profileName, ipAddress, privateKey, interfaceName, extraRoutes, dnsServers, preUp, _peers],
                                 function (error) {
                                     if (!error) {
                                         if (!isEditing) {

@@ -172,6 +172,7 @@ class Vpn:
     def __init__(self):
         self._sudo_pwd = None
         self.interface = None
+        self._privkey_cache = {}
 
     def _require_interface(self):
         if not self.interface:
@@ -180,6 +181,7 @@ class Vpn:
     def set_pwd(self, sudo_pwd):
         self._sudo_pwd = sudo_pwd
         self.interface = interface.Interface(sudo_pwd)
+        self._privkey_cache = {}
     
     def _sudo_cmd(self):
         if self._sudo_pwd:
@@ -312,6 +314,7 @@ class Vpn:
     def _get_private_key_status(self, profile_name, data=None):
         key, err = secrets_store.get_private_key(profile_name, self._sudo_pwd, return_error=True)
         if key:
+            self._privkey_cache[profile_name] = key
             return key, None
 
         if secrets_store.secret_exists(profile_name):
@@ -321,6 +324,7 @@ class Vpn:
             self._migrate_profile_secret(profile_name, data)
             key, err = secrets_store.get_private_key(profile_name, self._sudo_pwd, return_error=True)
             if key:
+                self._privkey_cache[profile_name] = key
                 return key, None
 
             legacy = data.get("private_key")
@@ -331,6 +335,7 @@ class Vpn:
                 if ok:
                     data.pop("private_key", None)
                     self._write_profile(profile_name, data)
+                    self._privkey_cache[profile_name] = legacy
                     return legacy, None
                 return None, "STORE_FAILED"
 
@@ -349,6 +354,7 @@ class Vpn:
                         key_file.unlink()
                     except Exception:
                         pass
+                    self._privkey_cache[profile_name] = legacy
                     return legacy, None
                 return None, "STORE_FAILED"
 
@@ -480,7 +486,7 @@ class Vpn:
             return stdout.decode().strip()
         return stderr.decode().strip()
 
-    def save_profile(self, profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, peers):
+    def save_profile(self, profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, pre_up, peers):
         if '/' in profile_name:
             return '"/" is not allowed in profile names'
 
@@ -571,6 +577,7 @@ class Vpn:
                    'ip_address': ip_address,
                    'dns_servers': dns_servers,
                    'extra_routes': extra_routes,
+                   'pre_up': pre_up,
                    'profile_name': profile_name,
                    'interface_name': interface_name,
                    }
@@ -610,6 +617,7 @@ class Vpn:
                             extra_routes = profile_data[4]
                             dns_servers = profile_data[5]
                             peers = profile_data[6]
+                            pre_up = profile_data[7] if len(profile_data) > 7 else ""
 
                             if not ip_address.strip():
                                 return {"error": f"{conf_name} is missing Address in [Interface]"}
@@ -621,7 +629,7 @@ class Vpn:
                                 profile_name = f"{original_name}_{suffix}"
                                 suffix += 1
 
-                            error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, peers)
+                            error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, pre_up, peers)
                             if error:
                                 return {"error": error}
 
@@ -639,11 +647,12 @@ class Vpn:
                 extra_routes = profile_data[4]
                 dns_servers = profile_data[5]
                 peers = profile_data[6]
+                pre_up = profile_data[7] if len(profile_data) > 7 else ""
 
                 if not ip_address.strip():
                     return {"error": "Config is missing Address in [Interface]"}
 
-                error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, peers)
+                error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, pre_up, peers)
                 if error:
                     return {"error": error}
 
@@ -701,7 +710,13 @@ class Vpn:
             key, val = map(str.strip, line.split("=", 1))
 
             if current_peer is None:
-                iface[key] = val
+                if key == "PreUp":
+                    if "PreUp" in iface and iface["PreUp"]:
+                        iface["PreUp"] = iface["PreUp"] + "\n" + val
+                    else:
+                        iface["PreUp"] = val
+                else:
+                    iface[key] = val
             else:
                 if key == "PublicKey":
                     current_peer["key"] = val
@@ -719,7 +734,8 @@ class Vpn:
             interface_name,
             "",
             iface.get("DNS", ""),
-            peers
+            peers,
+            iface.get("PreUp", "")
         )
 
     def parse_wireguard_conf(self, path):
@@ -769,6 +785,7 @@ class Vpn:
         extra_routes = profile_data[4]
         dns_servers = profile_data[5]
         peers = profile_data[6]
+        pre_up = profile_data[7] if len(profile_data) > 7 else ""
 
         if profile_name_override:
             override = self._sanitize_profile_name(str(profile_name_override).strip(), profile_name)
@@ -794,7 +811,7 @@ class Vpn:
             profile_name = f"{original_name}_{suffix}"
             suffix += 1
 
-        error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, peers)
+        error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, pre_up, peers)
         if error:
             return {"error": error}
 
@@ -866,6 +883,12 @@ class Vpn:
                         f"Address = {ip_address}",
                         f"PrivateKey = {privkey.strip()}",
                     ]
+                    pre_up = (data.get("pre_up") or "").strip()
+                    if pre_up:
+                        for line in pre_up.splitlines():
+                            line = line.strip()
+                            if line:
+                                lines.append(f"PreUp = {line}")
                     dns = (data.get("dns_servers") or "").strip()
                     if dns:
                         lines.append(f"DNS = {dns}")
@@ -1097,10 +1120,7 @@ class Vpn:
             except Exception:
                 continue  # skip broken files
             self._migrate_profile_secret(path.parent.name, data)
-            key, err = self._get_private_key_status(path.parent.name, data)
-            data['private_key'] = key or ""
-            if err:
-                data['private_key_error'] = err
+            data['private_key'] = self._privkey_cache.get(path.parent.name, "")
             raw_profiles[path.parent.name] = data
 
         active_by_privkey = {}

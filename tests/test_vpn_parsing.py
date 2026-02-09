@@ -23,7 +23,7 @@ def test_parse_conf_lines_basic():
         "Endpoint = vpn.example.com:51820",
     ]
 
-    profile_name, ip_address, private_key, iface, extra_routes, dns, peers = v._parse_wireguard_conf_lines(
+    profile_name, ip_address, private_key, iface, extra_routes, dns, peers, pre_up = v._parse_wireguard_conf_lines(
         lines, "default"
     )
 
@@ -32,6 +32,7 @@ def test_parse_conf_lines_basic():
     assert ip_address == "10.0.0.2/32"
     assert dns == "1.1.1.1"
     assert len(peers) == 1
+    assert pre_up == ""
     assert peers[0]["endpoint"] == "vpn.example.com:51820"
 
 

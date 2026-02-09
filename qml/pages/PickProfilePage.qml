@@ -126,6 +126,7 @@ UITK.Page {
                         "privateKey": entry.private_key || "",
                         "extraRoutes": entry.extra_routes || "",
                         "dnsServers": entry.dns_servers || "",
+                        "preUp": entry.pre_up || "",
                         "interfaceName": entry.interface_name || "wg" + i,
                         "isImported": true
                     })
@@ -467,13 +468,23 @@ Component {
         anchors.right: parent.right
         height: units.gu(3)
 
-        UITK.Label {
+        RowLayout {
             anchors.left: parent.left
             anchors.leftMargin: units.gu(2)
             anchors.verticalCenter: parent.verticalCenter
-            color: tertiaryTextColor
-            font.pixelSize: units.gu(1.4)
-            text: i18n.tr("Backend: ") + (useUserspace ? i18n.tr("Userspace") : i18n.tr("Kernel"))
+            spacing: units.gu(0.6)
+
+            Rectangle {
+                width: units.gu(1)
+                height: width
+                radius: width / 2
+                color: useUserspace ? "#1e88e5" : "#2e7d32"
+            }
+            UITK.Label {
+                color: tertiaryTextColor
+                font.pixelSize: units.gu(1.4)
+                text: i18n.tr("Backend: ") + (useUserspace ? i18n.tr("Userspace") : i18n.tr("Kernel"))
+            }
         }
     }
 
@@ -582,6 +593,7 @@ Component {
                                            "privateKey": private_key,
                                            "extraRoutes": extra_routes,
                                            "dnsServers": dns_servers,
+                                           "preUp": pre_up,
                                            "interfaceName": (!interface_name || interface_name.length == 0)
                                                             ? "wg" + index
                                                             : interface_name
