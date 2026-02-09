@@ -18,235 +18,331 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.0.1\n"
 
-
-#: ../qml/Main.qml:40
+#: ../qml/Main.qml:43
 msgid "Enter password"
 msgstr "Введите пароль"
 
-#: ../qml/Main.qml:41
+#: ../qml/Main.qml:44
 msgid "Your password is required to use the wireguard kernel modules."
 msgstr "Для использования модулей ядра Wireguard требуется ваш пароль."
 
-#: ../qml/Main.qml:51 ../qml/pages/WizardPage.qml:59
+#: ../qml/Main.qml:54 ../qml/pages/WizardPage.qml:101
 msgid "OK"
 msgstr "OK"
 
-#: ../qml/Main.qml:68
+#: ../qml/Main.qml:73 ../qml/pages/PickProfilePage.qml:383
+#: ../qml/pages/SettingsPage.qml:193
 msgid "Cancel"
 msgstr "Отмена"
 
-#: ../qml/pages/PickProfilePage.qml:16 wireguard.desktop.in.h:1
+#: ../qml/pages/PickProfilePage.qml:37 wireguard.desktop.in.h:1
 msgid "Wireguard"
 msgstr "WireGuard"
 
-#: ../qml/pages/PickProfilePage.qml:57
+#: ../qml/pages/PickProfilePage.qml:542
 msgid "Connecting.."
 msgstr "Подключение..."
 
-#: ../qml/pages/PickProfilePage.qml:63
+#: ../qml/pages/PickProfilePage.qml:549
 msgid "Disconnected"
 msgstr "Отключено"
 
-#: ../qml/pages/QrImportPage.qml:7
+#: ../qml/pages/QrImportPage.qml:16
 msgid "Scan QR via Barcode Reader"
 msgstr "Сканировать QR через Barcode Reader"
 
-#: ../qml/pages/QrScanPage.qml:7 ../qml/pages/PickProfilePage.qml:500
+#: ../qml/pages/PickProfilePage.qml:277 ../qml/pages/QrScanPage.qml:16
 msgid "Scan QR code"
 msgstr "Сканировать QR-код"
 
-#: ../qml/pages/QrScanPage.qml:17
+#: ../qml/pages/QrScanPage.qml:69
 msgid "Point the camera at the QR code"
 msgstr "Наведите камеру на QR-код"
 
-#: ../qml/pages/QrScanPage.qml:33
+#: ../qml/pages/QrScanPage.qml:117
 msgid "Could not decode QR"
 msgstr "Не удалось распознать QR"
 
-#: ../qml/pages/PickProfilePage.qml:77
+#: ../qml/pages/PickProfilePage.qml:569
 msgid "Failed:"
 msgstr "Ошибка:"
 
-#: ../qml/pages/PickProfilePage.qml:81
+#: ../qml/pages/PickProfilePage.qml:573
 msgid "Profile %1 deleted"
 msgstr "Профиль %1 удалён"
 
-#: ../qml/pages/ProfilePage.qml:27
+#: ../qml/pages/ProfilePage.qml:29
 msgid "Create a new profile"
 msgstr "Создать новый профиль"
 
-#: ../qml/pages/ProfilePage.qml:27
+#: ../qml/pages/ProfilePage.qml:29
 msgid "Edit profile %1"
 msgstr "Редактировать профиль %1"
 
-#: ../qml/pages/ProfilePage.qml:53
+#: ../qml/pages/PickProfilePage.qml:372 ../qml/pages/PickProfilePage.qml:377
+#: ../qml/pages/ProfilePage.qml:55
 msgid "Profile name"
 msgstr "Имя профиля"
 
-#: ../qml/pages/PickProfilePage.qml:469
+#: ../qml/pages/PickProfilePage.qml:229
 msgid "WireGuard configuration file"
 msgstr "Файл конфигурации WireGuard"
 
-#: ../qml/pages/PickProfilePage.qml:478
+#: ../qml/pages/PickProfilePage.qml:283
 msgid "Quick import from camera"
 msgstr "Быстрый импорт из камеры"
 
-#: ../qml/pages/PickProfilePage.qml:487
+#: ../qml/pages/PickProfilePage.qml:331
 msgid "Create manually"
 msgstr "Создать вручную"
 
-#: ../qml/pages/PickProfilePage.qml:496
+#: ../qml/pages/PickProfilePage.qml:337
 msgid "Fill parameters manually"
 msgstr "Заполнить параметры вручную"
 
-#: ../qml/pages/PickProfilePage.qml:520
+#: ../qml/pages/PickProfilePage.qml:373
 msgid "Enter a name for the imported profile"
 msgstr "Введите имя для импортируемого профиля"
 
-#: ../qml/pages/PickProfilePage.qml:540
+#: ../qml/pages/PickProfilePage.qml:390
 msgid "Save"
 msgstr "Сохранить"
 
-#: ../qml/pages/PickProfilePage.qml:551
+#: ../qml/pages/PickProfilePage.qml:395
 msgid "Please enter a profile name"
 msgstr "Введите имя профиля"
 
-#: ../qml/pages/ProfilePage.qml:64
+#: ../qml/pages/ProfilePage.qml:66
 msgid "Private Key"
 msgstr "Закрытый ключ"
 
-#: ../qml/pages/ProfilePage.qml:74
+#: ../qml/pages/ProfilePage.qml:76
 msgid "Generate"
 msgstr "Создать"
 
-#: ../qml/pages/ProfilePage.qml:80
+#: ../qml/pages/ProfilePage.qml:82
 msgid "Copy pubkey"
 msgstr "Копировать"
 
-#: ../qml/pages/ProfilePage.qml:92
+#: ../qml/pages/ProfilePage.qml:94
 msgid "IP address (with prefix length)"
 msgstr "IP-адрес (с длиной префикса)"
 
-#: ../qml/pages/ProfilePage.qml:102
+#: ../qml/pages/ProfilePage.qml:104
 msgid "Extra routes"
 msgstr "Дополнительные маршруты"
 
-#: ../qml/pages/ProfilePage.qml:111
+#: ../qml/pages/ProfilePage.qml:113
 msgid "DNS"
 msgstr "DNS"
 
-#: ../qml/pages/ProfilePage.qml:138
+#: ../qml/pages/ProfilePage.qml:149
 msgid "Peer #%1"
 msgstr "Узел #%1"
 
-#: ../qml/pages/ProfilePage.qml:154
+#: ../qml/pages/ProfilePage.qml:165
 msgid "Name"
 msgstr "Имя"
 
-#: ../qml/pages/ProfilePage.qml:162
+#: ../qml/pages/ProfilePage.qml:173
 msgid "Public key"
 msgstr "Открытый ключ"
 
-#: ../qml/pages/ProfilePage.qml:171
+#: ../qml/pages/ProfilePage.qml:182
 msgid "Allowed IP prefixes"
 msgstr "Разрешённые IP-префиксы"
 
-#: ../qml/pages/ProfilePage.qml:181
+#: ../qml/pages/ProfilePage.qml:192
 msgid "Endpoint with port"
 msgstr "Конечная точка с портом"
 
-#: ../qml/pages/ProfilePage.qml:191
+#: ../qml/pages/ProfilePage.qml:202
 msgid "Preshared key"
 msgstr "Предустановленный ключ"
 
-#: ../qml/pages/ProfilePage.qml:203
+#: ../qml/pages/ProfilePage.qml:214
 msgid "Add peer"
 msgstr "Добавить узел"
 
-#: ../qml/pages/ProfilePage.qml:231
+#: ../qml/pages/ProfilePage.qml:242
 msgid "Save profile"
 msgstr "Сохранить профиль"
 
-#: ../qml/pages/SettingsPage.qml:17
+#: ../qml/pages/SettingsPage.qml:28
 msgid "Settings"
 msgstr "Настройки"
 
-#: ../qml/pages/SettingsPage.qml:43
+#: ../qml/pages/SettingsPage.qml:107
 msgid "Export tunnels to zip file"
 msgstr "Экспорт туннелей в zip-файл"
 
-#: ../qml/pages/SettingsPage.qml:44
+#: ../qml/pages/SettingsPage.qml:108
 msgid "Zip file will be saved to Downloads"
 msgstr "Zip-файл будет сохранен в папке загрузок"
 
-#: ../qml/pages/SettingsPage.qml:47
+#: ../qml/pages/SettingsPage.qml:112
 msgid "Export error: "
 msgstr "Ошибка экспорта: "
 
-#: ../qml/pages/SettingsPage.qml:49
+#: ../qml/pages/SettingsPage.qml:115 ../qml/pages/SettingsPage.qml:117
 msgid "Saved: "
 msgstr "Сохранено: "
 
-#: ../qml/pages/SettingsPage.qml:54
+#: ../qml/pages/SettingsPage.qml:125
 msgid "View application logs"
 msgstr "Просмотр журналов приложения"
 
-#: ../qml/pages/SettingsPage.qml:55
+#: ../qml/pages/SettingsPage.qml:126
 msgid "Logs may help with debugging"
 msgstr "Журналы могут помочь при отладке"
 
-#: ../qml/pages/SettingsPage.qml:61
+#: ../qml/pages/SettingsPage.qml:131
 msgid "Use userspace implementation"
 msgstr "Использовать userspace реализацию"
 
-#: ../qml/pages/SettingsPage.qml:62
+#: ../qml/pages/SettingsPage.qml:132
 msgid "May be slower and less stable"
 msgstr "Может быть медленнее и менее стабильной"
 
-#: ../qml/pages/SettingsPage.qml:75
-msgid "Allow control via external apps"
-msgstr "Разрешить управление через внешние приложения"
-
-#: ../qml/pages/SettingsPage.qml:76
-msgid "Not implemented yet"
-msgstr "Пока не реализовано"
-
-#: ../qml/pages/SettingsPage.qml:83
+#: ../qml/pages/SettingsPage.qml:154
 msgid "Re-check kernel module"
 msgstr "Повторно проверить модуль ядра"
 
-#: ../qml/pages/SettingsPage.qml:84
+#: ../qml/pages/SettingsPage.qml:155
 msgid "Run kernel and sudo check wizard"
 msgstr "Запустить мастер проверки ядра и прав sudo"
 
-#: ../qml/pages/SettingsPage.qml:91
+#: ../qml/pages/SettingsPage.qml:163
 msgid "Sources and bug tracker"
 msgstr "Исходники и багтрекер"
 
-#: ../qml/pages/SettingsPage.qml:92
+#: ../qml/pages/SettingsPage.qml:164
 msgid "Open project repository"
 msgstr "Открыть репозиторий проекта"
 
-#: ../qml/pages/WizardPage.qml:43
+#: ../qml/pages/WizardPage.qml:85
 msgid ""
 "Kernel module is <b>not usable</b>.<br/>Will fall back to the slow, buggy, "
 "userspace implementation."
 msgstr ""
-"Модуль ядра <b>не может быть использован</b>.<br/>Будет использована медленная, "
-"ненадёжная реализация в пользовательском пространстве."
+"Модуль ядра <b>не может быть использован</b>.<br/>Будет использована "
+"медленная, ненадёжная реализация в пользовательском пространстве."
 
-#: ../qml/pages/WizardPage.qml:52
+#: ../qml/pages/WizardPage.qml:94
 msgid ""
 "Please, <b>get in touch with your device porter</b> (or with me) to add "
 "support on your device; it takes a couple of minutes only.<br/>See <a "
-"href='https://gitlab.com/ubports/community-ports/android9/xiaomi-poco-f1/"
-"kernel-xiaomi-beryllium/-/merge_requests/1'>here</a> for an example change "
-"to the kernel."
+"href='https://gitlab.com/ubports/community-ports/android9/xiaomi-"
+"poco-f1/kernel-xiaomi-beryllium/-/merge_requests/1'>here</a> for an example "
+"change to the kernel."
 msgstr ""
-"Пожалуйста, <b>свяжитесь с портировщиком вашего устройства</b> (или со мной), "
-"чтобы добавить поддержку для вашего устройства; это займёт всего пару минут.<br/>"
-"Пример изменения ядра можно посмотреть <a href='https://gitlab.com/ubports/"
-"community-ports/android9/xiaomi-poco-f1/kernel-xiaomi-beryllium/-/merge_requests/1'>здесь</a>."
+"Пожалуйста, <b>свяжитесь с портировщиком вашего устройства</b> (или со "
+"мной), чтобы добавить поддержку для вашего устройства; это займёт всего пару"
+" минут.<br/>Пример изменения ядра можно посмотреть <a "
+"href='https://gitlab.com/ubports/community-ports/android9/xiaomi-"
+"poco-f1/kernel-xiaomi-beryllium/-/merge_requests/1'>здесь</a>."
+
+#: ../qml/Main.qml:66
+msgid "Wrong password"
+msgstr ""
+
+#: ../qml/pages/ImportPage.qml:17
+msgid "Select File"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:100
+msgid "Import failed: "
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:106
+msgid "Imported %1 profiles"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:107
+msgid "Profile imported successfully"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:223
+msgid "Import .conf/.zip"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:457
+msgid "Importing profile..."
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:486
+msgid "Backend: "
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:486
+msgid "Kernel"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:486
+msgid "Userspace"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:122
+msgid "PreUp command"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:124
+msgid "Optional command to run before interface up"
+msgstr ""
+
+#: ../qml/pages/QrScanPage.qml:118
+msgid "QR error: "
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:146
+msgid "Re-encrypt stored keys"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:147
+msgid "Use when your password has changed"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:176
+msgid "Re-encrypt keys"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:177
+msgid "Enter old and new password"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:181
+msgid "Old password"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:186
+msgid "New password"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:197
+msgid "Re-encrypt"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:201
+msgid "Both passwords are required"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:208
+msgid "Re-encrypt failed: "
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:210
+msgid "Keys re-encrypted"
+msgstr ""
+
+#: ../qml/pages/WizardPage.qml:66
+msgid "Python error: %1"
+msgstr ""
+
+#~ msgid "Allow control via external apps"
+#~ msgstr "Разрешить управление через внешние приложения"
+
+#~ msgid "Not implemented yet"
+#~ msgstr "Пока не реализовано"
 
 #~ msgid "Ok"
 #~ msgstr "Ok"

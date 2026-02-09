@@ -7,6 +7,8 @@ Fork du projet d’origine wireguard_qml, adapté et maintenu pour les appareils
 - Bascule en userspace (wireguard‑go) si le module noyau est indisponible
 - Support QR/ZIP/import pour les configs .conf
 - Routes supplémentaires et DNS par profil
+- Hooks PreUp (commandes exécutées avant la mise en ligne de l’interface)
+- Stockage chiffré des clés privées (basé sur mot de passe)
 
 ## Compilation & installation
 Prérequis : `clickable` ≥ 8.6, Docker disponible, image Ubuntu SDK 20.04.
@@ -27,6 +29,23 @@ Pour ajouter WireGuard au noyau UT : https://www.wireguard.com/compilation/
 
 ## Export des configs
 Tous les profils peuvent être exportés via Paramètres → « Export tunnels to zip file » vers `/home/phablet/Downloads/wireguard.zip` (le nom est incrémenté si le fichier existe déjà).
+
+## PreUp (utilisation)
+PreUp s’exécute **avant** la mise en ligne de l’interface. Utile pour des tâches préparatoires (routes, règles, etc.).
+
+Étapes :
+1. Ouvrir un profil.
+2. Remplir le champ « PreUp command ».
+3. Séparer les commandes par `;` ou sur des lignes distinctes.
+
+Exemple :
+```
+ip rule add fwmark 51820 table 51820
+ip route add default dev wg0 table 51820
+```
+
+## Changements & liste des fonctions
+Voir `docs/CHANGES.fr.md`.
 
 ## Mainteneur
 Sysadmin <bytebuddy@yandex.ru>

@@ -18,128 +18,118 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.0.1\n"
 
-#: ../qml/Main.qml:40
+#: ../qml/Main.qml:43
 msgid "Enter password"
 msgstr "Passwort eingeben"
 
-#: ../qml/Main.qml:41
+#: ../qml/Main.qml:44
 msgid "Your password is required to use the wireguard kernel modules."
 msgstr ""
 "Das Passwort ist notwendig um die Wireguard Kernel-Module zu verwenden."
 
-#: ../qml/Main.qml:51 ../qml/pages/WizardPage.qml:59
+#: ../qml/Main.qml:54 ../qml/pages/WizardPage.qml:101
 msgid "OK"
 msgstr "OK"
 
-#: ../qml/Main.qml:68
+#: ../qml/Main.qml:73 ../qml/pages/PickProfilePage.qml:383
+#: ../qml/pages/SettingsPage.qml:193
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: ../qml/pages/PickProfilePage.qml:16 wireguard.desktop.in.h:1
+#: ../qml/pages/PickProfilePage.qml:37 wireguard.desktop.in.h:1
 msgid "Wireguard"
 msgstr "Wireguard"
 
-#: ../qml/pages/PickProfilePage.qml:57
+#: ../qml/pages/PickProfilePage.qml:542
 msgid "Connecting.."
 msgstr "Verbinde..."
 
-#: ../qml/pages/PickProfilePage.qml:63
+#: ../qml/pages/PickProfilePage.qml:549
 msgid "Disconnected"
 msgstr "Verbindung getrennt"
 
-#: ../qml/pages/PickProfilePage.qml:77
+#: ../qml/pages/PickProfilePage.qml:569
 msgid "Failed:"
 msgstr "Fehlgeschlagen:"
 
-#: ../qml/pages/PickProfilePage.qml:81
+#: ../qml/pages/PickProfilePage.qml:573
 msgid "Profile %1 deleted"
 msgstr "Profil %1 gelöscht"
 
-#: ../qml/pages/ProfilePage.qml:27
+#: ../qml/pages/ProfilePage.qml:29
 msgid "Create a new profile"
 msgstr "Neues Profil anlegen"
 
-#: ../qml/pages/ProfilePage.qml:27
+#: ../qml/pages/ProfilePage.qml:29
 msgid "Edit profile %1"
 msgstr "Profil %1 editieren"
 
-#: ../qml/pages/ProfilePage.qml:53
+#: ../qml/pages/PickProfilePage.qml:372 ../qml/pages/PickProfilePage.qml:377
+#: ../qml/pages/ProfilePage.qml:55
 msgid "Profile name"
 msgstr "Profilname"
 
-#: ../qml/pages/ProfilePage.qml:64
+#: ../qml/pages/ProfilePage.qml:66
 msgid "Private Key"
 msgstr "Privater Schlüssel"
 
-#: ../qml/pages/ProfilePage.qml:74
+#: ../qml/pages/ProfilePage.qml:76
 msgid "Generate"
 msgstr "Generieren"
 
-#: ../qml/pages/ProfilePage.qml:80
+#: ../qml/pages/ProfilePage.qml:82
 msgid "Copy pubkey"
 msgstr "Öff. Schl. kopieren"
 
-#: ../qml/pages/ProfilePage.qml:92
+#: ../qml/pages/ProfilePage.qml:94
 msgid "IP address (with prefix length)"
 msgstr "IP-Adresse (mit Präfixlänge)"
 
-#: ../qml/pages/ProfilePage.qml:102
+#: ../qml/pages/ProfilePage.qml:104
 msgid "Extra routes"
 msgstr "Zusätzliche Routen"
 
-#: ../qml/pages/ProfilePage.qml:111
+#: ../qml/pages/ProfilePage.qml:113
 msgid "DNS"
 msgstr "DNS"
 
-#: ../qml/pages/ProfilePage.qml:138
+#: ../qml/pages/ProfilePage.qml:149
 msgid "Peer #%1"
 msgstr "Gegenstelle #%1"
 
-#: ../qml/pages/ProfilePage.qml:154
+#: ../qml/pages/ProfilePage.qml:165
 msgid "Name"
 msgstr "Name"
 
-#: ../qml/pages/ProfilePage.qml:162
+#: ../qml/pages/ProfilePage.qml:173
 msgid "Public key"
 msgstr "Öffentlicher Schlüssel"
 
-#: ../qml/pages/ProfilePage.qml:171
+#: ../qml/pages/ProfilePage.qml:182
 msgid "Allowed IP prefixes"
 msgstr "Erlaubte IP-Präfixe"
 
-#: ../qml/pages/ProfilePage.qml:181
+#: ../qml/pages/ProfilePage.qml:192
 msgid "Endpoint with port"
 msgstr "Endpunkt mit Port"
 
-#: ../qml/pages/ProfilePage.qml:191
+#: ../qml/pages/ProfilePage.qml:202
 msgid "Preshared key"
 msgstr "Gemeinsamer Schlüssel"
 
-#: ../qml/pages/ProfilePage.qml:203
+#: ../qml/pages/ProfilePage.qml:214
 msgid "Add peer"
 msgstr "Gegenstelle hinzufügen"
 
-#: ../qml/pages/ProfilePage.qml:231
+#: ../qml/pages/ProfilePage.qml:242
 msgid "Save profile"
 msgstr "Profil speichern"
 
-#: ../qml/pages/SettingsPage.qml:17
+#: ../qml/pages/SettingsPage.qml:28
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: ../qml/pages/SettingsPage.qml:43
-msgid "Use slow userspace implementation"
-msgstr "Verwende die langsame Userspace Implementierung"
-
-#: ../qml/pages/SettingsPage.qml:44
-msgid "It will be buggy, slow and probably crash."
-msgstr "Diese ist fehlerhaft, langsam und wird vermutlich zusammenbrechen."
-
-#: ../qml/pages/SettingsPage.qml:52
-msgid "Try validating the kernel module again"
-msgstr "Versuche das Kernel-Modul neu zu validieren"
-
-#: ../qml/pages/WizardPage.qml:43
+#: ../qml/pages/WizardPage.qml:85
 msgid ""
 "Kernel module is <b>not usable</b>.<br/>Will fall back to the slow, buggy, "
 "userspace implementation."
@@ -147,19 +137,216 @@ msgstr ""
 "Kernel-Modul ist <b>nicht nutzbar</b>.<br/>Falle zurück auf die langsame, "
 "fehlerbehaftete Userspace Implementation."
 
-#: ../qml/pages/WizardPage.qml:52
+#: ../qml/pages/WizardPage.qml:94
 msgid ""
 "Please, <b>get in touch with your device porter</b> (or with me) to add "
 "support on your device; it takes a couple of minutes only.<br/>See <a "
-"href='https://gitlab.com/ubports/community-ports/android9/xiaomi-poco-f1/"
-"kernel-xiaomi-beryllium/-/merge_requests/1'>here</a> for an example change "
-"to the kernel."
+"href='https://gitlab.com/ubports/community-ports/android9/xiaomi-"
+"poco-f1/kernel-xiaomi-beryllium/-/merge_requests/1'>here</a> for an example "
+"change to the kernel."
 msgstr ""
 "Bitte <b>nimm Kontakt mit dem Porter deines Gerätes auf</b> (oder mit mir) "
 "um die Unterstützung für dein Gerät hinzuzufügen. Das dauert nur ein paar "
-"Minuten.<br/>Ein Beispiel für eine Kernel-Anpassung ist <a href='https://"
-"gitlab.com/ubports/community-ports/android9/xiaomi-poco-f1/kernel-xiaomi-"
-"beryllium/-/merge_requests/1'>hier</a>  zu sehen."
+"Minuten.<br/>Ein Beispiel für eine Kernel-Anpassung ist <a "
+"href='https://gitlab.com/ubports/community-ports/android9/xiaomi-"
+"poco-f1/kernel-xiaomi-beryllium/-/merge_requests/1'>hier</a>  zu sehen."
+
+#: ../qml/Main.qml:66
+msgid "Wrong password"
+msgstr ""
+
+#: ../qml/pages/ImportPage.qml:17
+msgid "Select File"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:100
+msgid "Import failed: "
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:106
+msgid "Imported %1 profiles"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:107
+msgid "Profile imported successfully"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:223
+msgid "Import .conf/.zip"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:229
+msgid "WireGuard configuration file"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:277 ../qml/pages/QrScanPage.qml:16
+msgid "Scan QR code"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:283
+msgid "Quick import from camera"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:331
+msgid "Create manually"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:337
+msgid "Fill parameters manually"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:373
+msgid "Enter a name for the imported profile"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:390
+msgid "Save"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:395
+msgid "Please enter a profile name"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:457
+msgid "Importing profile..."
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:486
+msgid "Backend: "
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:486
+msgid "Kernel"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:486
+msgid "Userspace"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:122
+msgid "PreUp command"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:124
+msgid "Optional command to run before interface up"
+msgstr ""
+
+#: ../qml/pages/QrImportPage.qml:16
+msgid "Scan QR via Barcode Reader"
+msgstr ""
+
+#: ../qml/pages/QrScanPage.qml:69
+msgid "Point the camera at the QR code"
+msgstr ""
+
+#: ../qml/pages/QrScanPage.qml:117
+msgid "Could not decode QR"
+msgstr ""
+
+#: ../qml/pages/QrScanPage.qml:118
+msgid "QR error: "
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:107
+msgid "Export tunnels to zip file"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:108
+msgid "Zip file will be saved to Downloads"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:112
+msgid "Export error: "
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:115 ../qml/pages/SettingsPage.qml:117
+msgid "Saved: "
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:125
+msgid "View application logs"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:126
+msgid "Logs may help with debugging"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:131
+msgid "Use userspace implementation"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:132
+msgid "May be slower and less stable"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:146
+msgid "Re-encrypt stored keys"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:147
+msgid "Use when your password has changed"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:154
+msgid "Re-check kernel module"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:155
+msgid "Run kernel and sudo check wizard"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:163
+msgid "Sources and bug tracker"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:164
+msgid "Open project repository"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:176
+msgid "Re-encrypt keys"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:177
+msgid "Enter old and new password"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:181
+msgid "Old password"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:186
+msgid "New password"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:197
+msgid "Re-encrypt"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:201
+msgid "Both passwords are required"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:208
+msgid "Re-encrypt failed: "
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:210
+msgid "Keys re-encrypted"
+msgstr ""
+
+#: ../qml/pages/WizardPage.qml:66
+msgid "Python error: %1"
+msgstr ""
+
+#~ msgid "Use slow userspace implementation"
+#~ msgstr "Verwende die langsame Userspace Implementierung"
+
+#~ msgid "It will be buggy, slow and probably crash."
+#~ msgstr "Diese ist fehlerhaft, langsam und wird vermutlich zusammenbrechen."
+
+#~ msgid "Try validating the kernel module again"
+#~ msgstr "Versuche das Kernel-Modul neu zu validieren"
 
 #~ msgid "Ok"
 #~ msgstr "Ok"

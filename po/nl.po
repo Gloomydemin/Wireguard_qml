@@ -9,47 +9,324 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-09-07 10:30+0000\n"
 "PO-Revision-Date: 2021-09-08 19:35+0200\n"
+"Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
 "Language-Team: Dutch <vistausss@fastmail.com>\n"
+"Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.0\n"
-"Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"Language: nl\n"
+"X-Generator: Poedit 3.0\n"
 
-#: ../qml/pages/ProfilePage.qml:52
+#: ../qml/pages/PickProfilePage.qml:372 ../qml/pages/PickProfilePage.qml:377
+#: ../qml/pages/ProfilePage.qml:55
 msgid "Profile name"
 msgstr "Profielnaam"
 
-#: ../qml/pages/ProfilePage.qml:63
+#: ../qml/pages/ProfilePage.qml:66
 msgid "Private Key"
 msgstr "Privésleutel"
 
-#: ../qml/pages/ProfilePage.qml:92
+#: ../qml/pages/ProfilePage.qml:94
 msgid "IP address (with prefix length)"
 msgstr "IP-adres (incl. voorvoegsellengte)"
 
-#: ../qml/pages/ProfilePage.qml:102
+#: ../qml/pages/ProfilePage.qml:104
 msgid "Extra routes"
 msgstr "Aanvullende routes"
 
-#: ../qml/pages/ProfilePage.qml:145
+#: ../qml/pages/ProfilePage.qml:165
 msgid "Name"
 msgstr "Naam"
 
-#: ../qml/pages/ProfilePage.qml:153
+#: ../qml/pages/ProfilePage.qml:173
 msgid "Public key"
 msgstr "Publieke sleutel"
 
-#: ../qml/pages/ProfilePage.qml:163
+#: ../qml/pages/ProfilePage.qml:182
 msgid "Allowed IP prefixes"
 msgstr "Toegestane ip-voorvoegsels"
 
-#: ../qml/pages/ProfilePage.qml:174
+#: ../qml/pages/ProfilePage.qml:192
 msgid "Endpoint with port"
 msgstr "Eindpunt met poort"
 
-#: wireguard.desktop.in.h:1
+#: ../qml/pages/PickProfilePage.qml:37 wireguard.desktop.in.h:1
 msgid "Wireguard"
 msgstr "Wireguard"
+
+#: ../qml/Main.qml:43
+msgid "Enter password"
+msgstr ""
+
+#: ../qml/Main.qml:44
+msgid "Your password is required to use the wireguard kernel modules."
+msgstr ""
+
+#: ../qml/Main.qml:54 ../qml/pages/WizardPage.qml:101
+msgid "OK"
+msgstr ""
+
+#: ../qml/Main.qml:66
+msgid "Wrong password"
+msgstr ""
+
+#: ../qml/Main.qml:73 ../qml/pages/PickProfilePage.qml:383
+#: ../qml/pages/SettingsPage.qml:193
+msgid "Cancel"
+msgstr ""
+
+#: ../qml/pages/ImportPage.qml:17
+msgid "Select File"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:100
+msgid "Import failed: "
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:106
+msgid "Imported %1 profiles"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:107
+msgid "Profile imported successfully"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:223
+msgid "Import .conf/.zip"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:229
+msgid "WireGuard configuration file"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:277 ../qml/pages/QrScanPage.qml:16
+msgid "Scan QR code"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:283
+msgid "Quick import from camera"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:331
+msgid "Create manually"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:337
+msgid "Fill parameters manually"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:373
+msgid "Enter a name for the imported profile"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:390
+msgid "Save"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:395
+msgid "Please enter a profile name"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:457
+msgid "Importing profile..."
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:486
+msgid "Backend: "
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:486
+msgid "Kernel"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:486
+msgid "Userspace"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:542
+msgid "Connecting.."
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:549
+msgid "Disconnected"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:569
+msgid "Failed:"
+msgstr ""
+
+#: ../qml/pages/PickProfilePage.qml:573
+msgid "Profile %1 deleted"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:29
+msgid "Create a new profile"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:29
+msgid "Edit profile %1"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:76
+msgid "Generate"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:82
+msgid "Copy pubkey"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:113
+msgid "DNS"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:122
+msgid "PreUp command"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:124
+msgid "Optional command to run before interface up"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:149
+msgid "Peer #%1"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:202
+msgid "Preshared key"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:214
+msgid "Add peer"
+msgstr ""
+
+#: ../qml/pages/ProfilePage.qml:242
+msgid "Save profile"
+msgstr ""
+
+#: ../qml/pages/QrImportPage.qml:16
+msgid "Scan QR via Barcode Reader"
+msgstr ""
+
+#: ../qml/pages/QrScanPage.qml:69
+msgid "Point the camera at the QR code"
+msgstr ""
+
+#: ../qml/pages/QrScanPage.qml:117
+msgid "Could not decode QR"
+msgstr ""
+
+#: ../qml/pages/QrScanPage.qml:118
+msgid "QR error: "
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:28
+msgid "Settings"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:107
+msgid "Export tunnels to zip file"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:108
+msgid "Zip file will be saved to Downloads"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:112
+msgid "Export error: "
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:115 ../qml/pages/SettingsPage.qml:117
+msgid "Saved: "
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:125
+msgid "View application logs"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:126
+msgid "Logs may help with debugging"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:131
+msgid "Use userspace implementation"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:132
+msgid "May be slower and less stable"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:146
+msgid "Re-encrypt stored keys"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:147
+msgid "Use when your password has changed"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:154
+msgid "Re-check kernel module"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:155
+msgid "Run kernel and sudo check wizard"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:163
+msgid "Sources and bug tracker"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:164
+msgid "Open project repository"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:176
+msgid "Re-encrypt keys"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:177
+msgid "Enter old and new password"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:181
+msgid "Old password"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:186
+msgid "New password"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:197
+msgid "Re-encrypt"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:201
+msgid "Both passwords are required"
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:208
+msgid "Re-encrypt failed: "
+msgstr ""
+
+#: ../qml/pages/SettingsPage.qml:210
+msgid "Keys re-encrypted"
+msgstr ""
+
+#: ../qml/pages/WizardPage.qml:66
+msgid "Python error: %1"
+msgstr ""
+
+#: ../qml/pages/WizardPage.qml:85
+msgid ""
+"Kernel module is <b>not usable</b>.<br/>Will fall back to the slow, buggy, "
+"userspace implementation."
+msgstr ""
+
+#: ../qml/pages/WizardPage.qml:94
+msgid ""
+"Please, <b>get in touch with your device porter</b> (or with me) to add "
+"support on your device; it takes a couple of minutes only.<br/>See <a "
+"href='https://gitlab.com/ubports/community-ports/android9/xiaomi-"
+"poco-f1/kernel-xiaomi-beryllium/-/merge_requests/1'>here</a> for an example "
+"change to the kernel."
+msgstr ""

@@ -44,7 +44,7 @@ ip route add default dev wg0 table 51820
 ```
 
 ## Изменения и список функций
-Полный список изменений и функций: `docs/CHANGES.md`.
+Полный список изменений и функций: `docs/CHANGES.ru.md`.
 
 ## Мейнтейнер
 Sysadmin <bytebuddy@yandex.ru>
