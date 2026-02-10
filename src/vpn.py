@@ -683,26 +683,37 @@ class Vpn:
         profile_name = default_name
         interface_name = f"wg_{profile_name}"
 
+        def _strip_inline_comment(val):
+            return re.sub(r'\s[;#].*$', '', val).strip()
+
+        def _split_csv(val):
+            return [x.strip() for x in str(val or "").split(",") if x.strip()]
+
         peers = []
         current_peer = None
 
-        iface = {}
+        iface = {
+            "Address": [],
+            "DNS": [],
+            "PreUp": [],
+        }
         for raw in lines:
             line = raw.strip()
             if not line:
                 continue
-            if line.startswith("#"):
-                match = re.match(r"#\s*Profile\s*=\s*(.+)", line, re.IGNORECASE)
+            if line.startswith("#") or line.startswith(";"):
+                match = re.match(r"[#;]\s*Profile\s*=\s*(.+)", line, re.IGNORECASE)
                 if match:
                     profile_name = self._sanitize_profile_name(match.group(1).strip(), default_name)
                     interface_name = f"wg_{profile_name}"
                 continue
 
-            if line == "[Interface]":
+            lower = line.lower()
+            if lower == "[interface]":
                 current_peer = None
                 continue
 
-            if line == "[Peer]":
+            if lower == "[peer]":
                 current_peer = {
                     "name": f"Peer{len(peers)+1}",
                     "key": "",
@@ -717,34 +728,46 @@ class Vpn:
                 continue
 
             key, val = map(str.strip, line.split("=", 1))
+            val = _strip_inline_comment(val)
+            if not val and key.lower() not in ("preup",):
+                continue
 
             if current_peer is None:
-                if key == "PreUp":
-                    if "PreUp" in iface and iface["PreUp"]:
-                        iface["PreUp"] = iface["PreUp"] + "\n" + val
-                    else:
-                        iface["PreUp"] = val
+                key_lower = key.lower()
+                if key_lower == "preup":
+                    if val:
+                        iface["PreUp"].append(val)
+                elif key_lower == "address":
+                    iface["Address"] += _split_csv(val)
+                elif key_lower == "dns":
+                    iface["DNS"] += _split_csv(val)
+                elif key_lower == "privatekey":
+                    iface["PrivateKey"] = val
                 else:
                     iface[key] = val
             else:
-                if key == "PublicKey":
+                key_lower = key.lower()
+                if key_lower == "publickey":
                     current_peer["key"] = val
-                elif key == "AllowedIPs":
-                    current_peer["allowed_prefixes"] = val
-                elif key == "Endpoint":
+                elif key_lower == "allowedips":
+                    if current_peer["allowed_prefixes"]:
+                        current_peer["allowed_prefixes"] += ", " + val
+                    else:
+                        current_peer["allowed_prefixes"] = val
+                elif key_lower == "endpoint":
                     current_peer["endpoint"] = val
-                elif key == "PresharedKey":
+                elif key_lower == "presharedkey":
                     current_peer["presharedKey"] = val
 
         return (
             profile_name,
-            iface.get("Address", ""),
+            ", ".join(iface.get("Address", [])),
             iface.get("PrivateKey", ""),
             interface_name,
             "",
-            iface.get("DNS", ""),
+            ", ".join(iface.get("DNS", [])),
             peers,
-            iface.get("PreUp", "")
+            "\n".join(iface.get("PreUp", [])),
         )
 
     def parse_wireguard_conf(self, path):

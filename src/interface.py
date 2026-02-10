@@ -71,6 +71,10 @@ class Interface:
                            check=True)
             err = self.config_interface(profile, config_file)
             if err:
+                try:
+                    self.disconnect(interface_name)
+                except Exception:
+                    pass
                 return err
         else:
             if self.userspace_running():
@@ -390,9 +394,15 @@ class Interface:
         # ---------- DNS ----------
         dns_servers = [dns.strip() for dns in profile.get('dns_servers', '').split(',') if dns.strip()]
         if dns_servers:
-            sudo_run(['resolvectl', 'dns', interface_name] + dns_servers)
-            sudo_run(['resolvectl', 'domain', interface_name, '~.'])
-            log.info('DNS configured for %s', interface_name)
+            if Path('/usr/bin/resolvectl').exists():
+                res = sudo_run(['resolvectl', 'dns', interface_name] + dns_servers, check=False)
+                res2 = sudo_run(['resolvectl', 'domain', interface_name, '~.'], check=False)
+                if res.returncode != 0 or res2.returncode != 0:
+                    log.warning('resolvectl failed for %s', interface_name)
+                else:
+                    log.info('DNS configured for %s', interface_name)
+            else:
+                log.warning('resolvectl not found; skipping DNS setup for %s', interface_name)
 
         # ---------- EXTRA ROUTES ----------
         for extra_route in profile.get('extra_routes', '').split(','):

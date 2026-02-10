@@ -220,6 +220,22 @@ msgstr "Исходники и багтрекер"
 msgid "Open project repository"
 msgstr "Открыть репозиторий проекта"
 
+#: ../qml/pages/SettingsPage.qml:163
+msgid "Bug report"
+msgstr "Сообщить об ошибке"
+
+#: ../qml/pages/SettingsPage.qml:164
+msgid "Report a problem on GitHub"
+msgstr "Сообщить об ошибке на GitHub"
+
+#: ../qml/pages/SettingsPage.qml:170
+msgid "⭐ Support the project"
+msgstr "⭐ Поддержка проекта"
+
+#: ../qml/pages/SettingsPage.qml:175
+msgid "Support Wireguard_qml development"
+msgstr "Поддержать разработку Wireguard_qml"
+
 #: ../qml/pages/WizardPage.qml:85
 msgid ""
 "Kernel module is <b>not usable</b>.<br/>Will fall back to the slow, buggy, "

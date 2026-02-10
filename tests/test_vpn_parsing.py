@@ -94,3 +94,39 @@ def test_save_profile_keeps_existing_private_key():
         peers,
     )
     assert err is None
+
+
+def test_parse_conf_lines_with_comments_and_repeats():
+    vpn = _vpn_module()
+    v = vpn.Vpn()
+    lines = [
+        "; Profile = Demo VPN",
+        "[interface]",
+        "PrivateKey = privkey # inline comment",
+        "Address = 10.0.0.2/32",
+        "Address = 10.0.0.3/32 ; another comment",
+        "DNS = 1.1.1.1",
+        "DNS = 8.8.8.8",
+        "PreUp = echo one",
+        "PreUp = echo two # trailing",
+        "",
+        "[Peer]",
+        "PublicKey = pubkey",
+        "AllowedIPs = 0.0.0.0/0",
+        "AllowedIPs = ::/0",
+        "Endpoint = vpn.example.com:51820 # comment",
+    ]
+
+    profile_name, ip_address, private_key, iface, extra_routes, dns, peers, pre_up = v._parse_wireguard_conf_lines(
+        lines, "default"
+    )
+
+    assert profile_name == "Demo_VPN"
+    assert iface == "wg_Demo_VPN"
+    assert private_key == "privkey"
+    assert ip_address == "10.0.0.2/32, 10.0.0.3/32"
+    assert dns == "1.1.1.1, 8.8.8.8"
+    assert pre_up == "echo one\necho two"
+    assert len(peers) == 1
+    assert peers[0]["allowed_prefixes"] == "0.0.0.0/0, ::/0"
+    assert peers[0]["endpoint"] == "vpn.example.com:51820"

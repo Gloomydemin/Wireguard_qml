@@ -303,6 +303,22 @@ msgstr ""
 msgid "Open project repository"
 msgstr ""
 
+#: ../qml/pages/SettingsPage.qml:163
+msgid "Bug report"
+msgstr "Fehler melden"
+
+#: ../qml/pages/SettingsPage.qml:164
+msgid "Report a problem on GitHub"
+msgstr "Problem auf GitHub melden"
+
+#: ../qml/pages/SettingsPage.qml:170
+msgid "⭐ Support the project"
+msgstr "⭐ Projekt unterstützen"
+
+#: ../qml/pages/SettingsPage.qml:175
+msgid "Support Wireguard_qml development"
+msgstr "Entwicklung von Wireguard_qml unterstützen"
+
 #: ../qml/pages/SettingsPage.qml:176
 msgid "Re-encrypt keys"
 msgstr ""

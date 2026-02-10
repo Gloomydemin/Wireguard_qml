@@ -160,9 +160,26 @@ UITK.Page {
             }
 
             SettingsItem {
-                title: i18n.tr("Sources and bug tracker")
-                description: i18n.tr("Open project repository")
-                onClicked: Qt.openUrlExternally("https://github.com/Gloomydemin/Wireguard_qml")
+                title: i18n.tr("Bug report")
+                description: i18n.tr("Report a problem on GitHub")
+                onClicked: Qt.openUrlExternally("https://github.com/Gloomydemin/Wireguard_qml/issues")
+            }
+
+            Column {
+                width: contentCol.width
+                spacing: units.gu(1)
+                UITK.Label {
+                    text: i18n.tr("⭐ Support the project")
+                    color: "#cccccc"
+                    font.bold: true
+                }
+                UITK.Button {
+                    text: i18n.tr("Support Wireguard_qml development")
+                    iconName: "star"
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    onClicked: Qt.openUrlExternally("https://yoomoney.ru/to/4100119470150396")
+                }
             }
 
             Rectangle { height: units.gu(2); width: 1; color: "transparent" }

@@ -1,6 +1,6 @@
 # Projektänderungen & Funktionsübersicht
 
-Zuletzt aktualisiert: 2026-02-09
+Zuletzt aktualisiert: 2026-02-10
 
 Dieses Dokument beschreibt die jüngsten Änderungen und listet Funktionen auf, die hinzugefügt oder geändert wurden.
 

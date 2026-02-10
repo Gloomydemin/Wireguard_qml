@@ -1,6 +1,6 @@
 # Projectwijzigingen & Functieoverzicht
 
-Laatst bijgewerkt: 2026-02-09
+Laatst bijgewerkt: 2026-02-10
 
 Dit document beschrijft de recente wijzigingen en somt functies op die zijn toegevoegd of gewijzigd.
 

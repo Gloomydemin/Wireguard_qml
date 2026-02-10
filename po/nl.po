@@ -312,6 +312,22 @@ msgstr ""
 msgid "Keys re-encrypted"
 msgstr ""
 
+#: ../qml/pages/SettingsPage.qml:163
+msgid "Bug report"
+msgstr "Bug melden"
+
+#: ../qml/pages/SettingsPage.qml:164
+msgid "Report a problem on GitHub"
+msgstr "Meld een probleem op GitHub"
+
+#: ../qml/pages/SettingsPage.qml:170
+msgid "⭐ Support the project"
+msgstr "⭐ Steun het project"
+
+#: ../qml/pages/SettingsPage.qml:175
+msgid "Support Wireguard_qml development"
+msgstr "Steun de ontwikkeling van Wireguard_qml"
+
 #: ../qml/pages/WizardPage.qml:66
 msgid "Python error: %1"
 msgstr ""

@@ -1,6 +1,6 @@
 # Changements du projet & carte des fonctions
 
-Dernière mise à jour : 2026-02-09
+Dernière mise à jour : 2026-02-10
 
 Ce document décrit les changements récents et liste les fonctions ajoutées ou modifiées.
 
