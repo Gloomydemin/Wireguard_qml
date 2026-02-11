@@ -1,8 +1,9 @@
 # Projektänderungen & Funktionsübersicht
 
-Zuletzt aktualisiert: 2026-02-10
+Zuletzt aktualisiert: 2026-02-11
 
 Dieses Dokument beschreibt die jüngsten Änderungen und listet Funktionen auf, die hinzugefügt oder geändert wurden.
+Hinweis: Beim Aktualisieren das Dokument nicht komplett neu schreiben, sondern neue Änderungen hinzufügen und die Struktur unten beibehalten.
 
 ## Zusammenfassung der Änderungen
 - Verschlüsselte Speicherung privater Schlüssel mit dem **sudo‑Passwort** (kein externer Secret‑Dienst).

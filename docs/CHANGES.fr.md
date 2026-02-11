@@ -1,8 +1,9 @@
 # Changements du projet & carte des fonctions
 
-Dernière mise à jour : 2026-02-10
+Dernière mise à jour : 2026-02-11
 
 Ce document décrit les changements récents et liste les fonctions ajoutées ou modifiées.
+Remarque : lors des mises à jour, ne réécrivez pas le document en entier ; ajoutez les nouvelles modifications en conservant la structure ci‑dessous.
 
 ## Résumé des changements
 - Stockage chiffré des clés privées avec le **mot de passe sudo** (pas de service secret externe).

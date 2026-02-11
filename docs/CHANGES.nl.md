@@ -1,8 +1,9 @@
 # Projectwijzigingen & Functieoverzicht
 
-Laatst bijgewerkt: 2026-02-10
+Laatst bijgewerkt: 2026-02-11
 
 Dit document beschrijft de recente wijzigingen en somt functies op die zijn toegevoegd of gewijzigd.
+Opmerking: bij updates het document niet herschrijven; voeg nieuwe wijzigingen toe met behoud van de structuur hieronder.
 
 ## Samenvatting van wijzigingen
 - Versleutelde opslag van private keys met het **sudo‑wachtwoord** (geen externe secret service).

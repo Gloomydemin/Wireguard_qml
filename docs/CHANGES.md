@@ -1,8 +1,9 @@
 # Project Changes & Function Map
 
-Last updated: 2026-02-10
+Last updated: 2026-02-11
 
 This document records the recent changes and lists the functions that were added or modified.
+Note: when updating, do not rewrite the document; add new changes while keeping the structure below.
 
 ## Summary of changes
 - Encrypted private key storage using the **sudo password** (no external secret service).
