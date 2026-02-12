@@ -1,11 +1,15 @@
 # Projektänderungen & Funktionsübersicht
 
-Zuletzt aktualisiert: 2026-02-11
+Zuletzt aktualisiert: 2026-02-12
 
 Dieses Dokument beschreibt die jüngsten Änderungen und listet Funktionen auf, die hinzugefügt oder geändert wurden.
 Hinweis: Beim Aktualisieren das Dokument nicht komplett neu schreiben, sondern neue Änderungen hinzufügen und die Struktur unten beibehalten.
 
 ## Zusammenfassung der Änderungen
+- Private Schlüssel werden jetzt als root‑only Dateien in `/home/phablet/.local/share/wireguard.sysadmin/keys` (0600) gespeichert, ohne passwortbasierte Verschlüsselung.
+- Re‑Encryption‑Flow/UI und Private‑Key‑Cache in GUI/Backend entfernt.
+- `wg_config` erlaubt fehlendes `PrivateKey` bis zum Connect; der Key wird erst beim Connect geladen.
+- Tests für sudo‑basierten Key‑Speicher und `WIREGUARD_KEY_DIR` aktualisiert.
 - Verschlüsselte Speicherung privater Schlüssel mit dem **sudo‑Passwort** (kein externer Secret‑Dienst).
 - Re‑Encryption‑Workflow für alle Schlüssel bei Passwortänderung.
 - **PreUp**‑Unterstützung (Import/Export, UI‑Feld und Ausführung vor Interface‑Up).
@@ -23,12 +27,16 @@ Hinweis: Beim Aktualisieren das Dokument nicht komplett neu schreiben, sondern n
 - `set_private_key(profile_name, private_key, password)` — verschlüsselt und speichert den Key (scrypt/PBKDF2 + AES‑CTR + HMAC).
 - `get_private_key(profile_name, password, return_error=False)` — entschlüsselt den Key, liefert Fehlercode bei Fehlschlag.
 - `delete_private_key(profile_name)` — löscht die verschlüsselte Secret‑Datei.
+- Umgestellt auf root‑only Key‑Dateien in `KEY_DIR` (Standard: `/home/phablet/.local/share/wireguard.sysadmin/keys`).
+- `WIREGUARD_KEY_DIR` für Tests/Overrides; zuerst `sudo -n`, um Passwort‑stdin bei gecachten Credentials zu vermeiden.
+- Legacy‑verschlüsselter Store bleibt nur für Migration.
 
 ### `src/pyaes.py` (neu)
 - Reine Python‑Implementierung von AES‑CTR, genutzt von `secrets_store`.
 
 ### `src/wg_config.py` (neu)
 - `build_config(profile, private_key)` — erzeugt wg‑quick‑kompatiblen Config‑Text.
+- `build_config(profile, private_key=None)` — lässt `PrivateKey` weg, wenn nicht vorhanden.
 
 ### `src/vpn.py` (geändert)
 - `Vpn.set_pwd(sudo_pwd)` — setzt den In‑Memory‑Key‑Cache zurück.
@@ -47,6 +55,9 @@ Hinweis: Beim Aktualisieren das Dokument nicht komplett neu schreiben, sondern n
 - `Vpn.rekey_secrets(old_pwd, new_pwd)` — re‑encryptet alle gespeicherten Keys.
 - `Vpn.delete_profile(profile)` — löscht Secret beim Entfernen des Profils.
 - `Vpn.list_profiles()` — nutzt Key‑Cache (schnellere Liste).
+- `Vpn.rekey_secrets(...)` — meldet jetzt „nicht unterstützt“ bei root‑only Storage.
+- `Vpn.get_profile()` / `Vpn.list_profiles()` — geben keinen `private_key` mehr aus.
+- `_connect(...)` — lädt den Key bei Bedarf vor dem Verbinden.
 
 ### `src/interface.py` (geändert)
 - `_sudo_cmd()` / `_sudo_input()` — sudo‑Passwort via stdin.
@@ -80,6 +91,7 @@ Hinweis: Beim Aktualisieren das Dokument nicht komplett neu schreiben, sondern n
 ### `qml/pages/SettingsPage.qml` (geändert)
 - Re‑encrypt‑Dialog (`rekey_secrets`) hinzugefügt.
 - Initialisiert Backend‑State via `root.pwd`.
+- Re‑encrypt‑Dialog entfernt (root‑only Storage).
 
 ### Tests & CI (neu)
 - `tests/test_secrets_store.py`
@@ -87,6 +99,7 @@ Hinweis: Beim Aktualisieren das Dokument nicht komplett neu schreiben, sondern n
 - `tests/test_wg_config.py`
 - `.github/workflows/ci.yml`
 - `pytest.ini`
+- Tests unterstützen `WIREGUARD_KEY_DIR` und werden ohne sudo‑Zugang übersprungen.
 
 ## Fehlercodes aus dem Secret‑Speicher
 - `NO_PASSWORD` — kein Passwort angegeben.

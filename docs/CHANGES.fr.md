@@ -1,11 +1,15 @@
 # Changements du projet & carte des fonctions
 
-Dernière mise à jour : 2026-02-11
+Dernière mise à jour : 2026-02-12
 
 Ce document décrit les changements récents et liste les fonctions ajoutées ou modifiées.
 Remarque : lors des mises à jour, ne réécrivez pas le document en entier ; ajoutez les nouvelles modifications en conservant la structure ci‑dessous.
 
 ## Résumé des changements
+- Les clés privées sont désormais stockées en fichiers root‑only dans `/home/phablet/.local/share/wireguard.sysadmin/keys` (0600), sans chiffrement par mot de passe.
+- Suppression du flux/UI de re‑chiffrement et du cache des clés privées dans le GUI/backend.
+- `wg_config` accepte un `PrivateKey` manquant jusqu’à la connexion ; la clé est chargée au moment du connect.
+- Tests mis à jour pour le stockage via sudo et les overrides `WIREGUARD_KEY_DIR`.
 - Stockage chiffré des clés privées avec le **mot de passe sudo** (pas de service secret externe).
 - Flux de re‑chiffrement de toutes les clés lors d’un changement de mot de passe.
 - Support **PreUp** (import/export, champ UI et exécution avant l’interface up).
@@ -23,12 +27,16 @@ Remarque : lors des mises à jour, ne réécrivez pas le document en entier ; 
 - `set_private_key(profile_name, private_key, password)` — chiffre et stocke la clé (scrypt/PBKDF2 + AES‑CTR + HMAC).
 - `get_private_key(profile_name, password, return_error=False)` — déchiffre la clé, retourne un code d’erreur si échec.
 - `delete_private_key(profile_name)` — supprime le fichier secret chiffré.
+- Passage à des fichiers de clés root‑only dans `KEY_DIR` (par défaut `/home/phablet/.local/share/wireguard.sysadmin/keys`).
+- `WIREGUARD_KEY_DIR` pour tests/overrides ; tentative `sudo -n` d’abord pour éviter le stdin si sudo est déjà validé.
+- L’ancien stockage chiffré est conservé en lecture seule pour la migration.
 
 ### `src/pyaes.py` (nouveau)
 - Implémentation AES‑CTR en Python pur, utilisée par `secrets_store`.
 
 ### `src/wg_config.py` (nouveau)
 - `build_config(profile, private_key)` — génère un texte de configuration compatible wg‑quick.
+- `build_config(profile, private_key=None)` — omet `PrivateKey` si absent.
 
 ### `src/vpn.py` (modifié)
 - `Vpn.set_pwd(sudo_pwd)` — réinitialise le cache de clés en mémoire.
@@ -47,6 +55,9 @@ Remarque : lors des mises à jour, ne réécrivez pas le document en entier ; 
 - `Vpn.rekey_secrets(old_pwd, new_pwd)` — re‑chiffre toutes les clés stockées.
 - `Vpn.delete_profile(profile)` — supprime le secret lors de la suppression du profil.
 - `Vpn.list_profiles()` — utilise le cache de clés (liste plus rapide).
+- `Vpn.rekey_secrets(...)` — indique maintenant que le re‑chiffrement n’est pas supporté.
+- `Vpn.get_profile()` / `Vpn.list_profiles()` — n’exposent plus `private_key`.
+- `_connect(...)` — charge la clé à la demande avant la connexion.
 
 ### `src/interface.py` (modifié)
 - `_sudo_cmd()` / `_sudo_input()` — mot de passe sudo via stdin.
@@ -80,6 +91,7 @@ Remarque : lors des mises à jour, ne réécrivez pas le document en entier ; 
 ### `qml/pages/SettingsPage.qml` (modifié)
 - Ajout du dialogue de re‑chiffrement (`rekey_secrets`).
 - Initialise l’état backend via `root.pwd`.
+- Suppression du dialogue de re‑chiffrement (stockage root‑only).
 
 ### Tests & CI (nouveau)
 - `tests/test_secrets_store.py`
@@ -87,6 +99,7 @@ Remarque : lors des mises à jour, ne réécrivez pas le document en entier ; 
 - `tests/test_wg_config.py`
 - `.github/workflows/ci.yml`
 - `pytest.ini`
+- Tests compatibles avec `WIREGUARD_KEY_DIR` et ignorés sans identifiants sudo.
 
 ## Codes d’erreur du stockage secret
 - `NO_PASSWORD` — aucun mot de passe fourni.

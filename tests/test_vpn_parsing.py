@@ -1,5 +1,25 @@
 import base64
 import importlib
+import os
+import shutil
+import subprocess
+import tempfile
+
+import pytest
+
+SUDO_PWD = os.environ.get("WIREGUARD_SUDO_PWD") or os.environ.get("SUDO_PWD")
+SUDO_OK = False
+if SUDO_PWD and shutil.which("sudo"):
+    probe = subprocess.run(
+        ["sudo", "-S", "-v"],
+        input=(SUDO_PWD + "\n").encode(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    SUDO_OK = probe.returncode == 0
+
+os.environ.setdefault("WIREGUARD_KEY_DIR", tempfile.mkdtemp(prefix="wg_keys_"))
 
 import secrets_store
 
@@ -55,9 +75,11 @@ def test_sanitize_interface_name():
 
 
 def test_save_profile_keeps_existing_private_key():
+    if not SUDO_OK:
+        pytest.skip("sudo required for root key store")
     vpn = _vpn_module()
     v = vpn.Vpn()
-    v._sudo_pwd = "pw"
+    v._sudo_pwd = SUDO_PWD
     profile_name = "existing"
     v._write_profile(
         profile_name,
@@ -71,7 +93,7 @@ def test_save_profile_keeps_existing_private_key():
             "peers": [],
         },
     )
-    ok, err = secrets_store.set_private_key(profile_name, "privkeydata", "pw")
+    ok, err = secrets_store.set_private_key(profile_name, "privkeydata", SUDO_PWD)
     assert ok, err
     peer_key = base64.b64encode(b"\x00" * 32).decode("ascii")
     peers = [

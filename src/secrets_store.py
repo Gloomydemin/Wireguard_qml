@@ -3,6 +3,9 @@ import hashlib
 import hmac
 import json
 import os
+import re
+import shlex
+import subprocess
 from pathlib import Path
 
 import pyaes
@@ -11,21 +14,142 @@ APP_ID = "wireguard.sysadmin"
 APP_HOME = Path(os.environ.get("WIREGUARD_APP_HOME", "/home/phablet"))
 CONFIG_DIR = APP_HOME / ".local" / "share" / APP_ID
 PROFILES_DIR = CONFIG_DIR / "profiles"
+KEY_DIR = Path(os.environ.get("WIREGUARD_KEY_DIR", str(CONFIG_DIR / "keys")))
 
 
 def available():
     return True
 
 
-def _secret_path(profile_name):
+def _sanitize_profile_name(name):
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "_", str(name or ""))
+    return safe or "profile"
+
+
+def key_path(profile_name):
+    return KEY_DIR / f"{_sanitize_profile_name(profile_name)}.key"
+
+
+def _sudo_run(args, sudo_pwd, input_data=None):
+    def run(cmd, data):
+        return subprocess.run(
+            cmd,
+            input=data,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+    def normalize_error(res):
+        err = res.stderr.decode(errors="ignore").strip()
+        if "a password is required" in err.lower():
+            return "NO_PASSWORD"
+        if "incorrect password" in err.lower() or "sorry" in err.lower():
+            return "BAD_PASSWORD"
+        return err or "SUDO_FAILED"
+
+    if input_data is not None:
+        # Avoid injecting password into stdin when sudo creds are cached.
+        res = run(["/usr/bin/sudo", "-n"] + args, input_data)
+        if res.returncode == 0:
+            return res, None
+        err = normalize_error(res)
+        if err != "NO_PASSWORD":
+            return res, err
+        if not sudo_pwd:
+            return res, "NO_PASSWORD"
+        res = run(["/usr/bin/sudo", "-S", "-p", ""] + args, (sudo_pwd + "\n").encode() + input_data)
+        if res.returncode != 0:
+            return res, normalize_error(res)
+        return res, None
+
+    # No stdin needed: try non-interactive first, then fall back to password.
+    res = run(["/usr/bin/sudo", "-n"] + args, None)
+    if res.returncode == 0:
+        return res, None
+    err = normalize_error(res)
+    if err != "NO_PASSWORD":
+        return res, err
+    if not sudo_pwd:
+        return res, "NO_PASSWORD"
+    res = run(["/usr/bin/sudo", "-S", "-p", ""] + args, (sudo_pwd + "\n").encode())
+    if res.returncode != 0:
+        return res, normalize_error(res)
+    return res, None
+
+
+def secret_exists(profile_name, sudo_pwd=None):
+    path = key_path(profile_name)
+    if os.geteuid() == 0:
+        return path.exists()
+    res, err = _sudo_run(["/usr/bin/test", "-f", str(path)], sudo_pwd)
+    return bool(res and err is None and res.returncode == 0)
+
+
+def set_private_key(profile_name, private_key, sudo_pwd):
+    key_bytes = private_key
+    if isinstance(key_bytes, str):
+        key_bytes = key_bytes.strip().encode()
+    if not key_bytes:
+        return False, "Private key is required"
+
+    path = key_path(profile_name)
+    script = (
+        "umask 077; "
+        f"mkdir -p {shlex.quote(str(KEY_DIR))}; "
+        f"chmod 700 {shlex.quote(str(KEY_DIR))}; "
+        f"chown root:root {shlex.quote(str(KEY_DIR))}; "
+        f"cat > {shlex.quote(str(path))}; "
+        f"chmod 600 {shlex.quote(str(path))}; "
+        f"chown root:root {shlex.quote(str(path))}"
+    )
+    res, err = _sudo_run(["/bin/sh", "-c", script], sudo_pwd, input_data=key_bytes + b"\n")
+    if err:
+        return False, err
+    return True, None
+
+
+def get_private_key(profile_name, sudo_pwd, return_error=False):
+    if not sudo_pwd:
+        return (None, "NO_PASSWORD") if return_error else None
+    path = key_path(profile_name)
+    res, err = _sudo_run(["/bin/cat", str(path)], sudo_pwd)
+    if err:
+        if "No such file" in err or "not found" in err:
+            return (None, "MISSING") if return_error else None
+        return (None, err) if return_error else None
+    key = res.stdout.decode(errors="ignore").strip()
+    return (key, None) if return_error else key
+
+
+def delete_private_key(profile_name, sudo_pwd):
+    path = key_path(profile_name)
+    if os.geteuid() == 0:
+        try:
+            if path.exists():
+                path.unlink()
+        except Exception as e:
+            return False, str(e)
+        return True, None
+    if not sudo_pwd:
+        return False, "NO_PASSWORD"
+    res, err = _sudo_run(["/bin/rm", "-f", str(path)], sudo_pwd)
+    if err:
+        return False, err
+    return True, None
+
+
+# ---- Legacy encrypted store (read-only, for migration) ----
+
+def _legacy_secret_path(profile_name):
     return PROFILES_DIR / profile_name / "secret.json"
 
 
-def secret_exists(profile_name):
-    return _secret_path(profile_name).exists()
+def legacy_secret_exists(profile_name):
+    return _legacy_secret_path(profile_name).exists()
 
 
-def _derive_keys(password, salt, meta):
+def _legacy_derive_keys(password, salt, meta):
     pwd = (password or "").encode()
     kdf = (meta or {}).get("kdf") or "scrypt"
     if kdf == "scrypt":
@@ -37,13 +161,12 @@ def _derive_keys(password, salt, meta):
             return key[:32], key[32:], {"kdf": "scrypt", "n": n, "r": r, "p": p}
         except Exception:
             pass
-    # fallback to PBKDF2-HMAC
     iters = int((meta or {}).get("iters") or 200000)
     key = hashlib.pbkdf2_hmac("sha256", pwd, salt, iters, dklen=64)
     return key[:32], key[32:], {"kdf": "pbkdf2", "iters": iters}
 
 
-def _hmac_data(meta, salt, nonce, ct):
+def _legacy_hmac_data(meta, salt, nonce, ct):
     parts = [meta.get("kdf", "")]
     if meta.get("kdf") == "scrypt":
         parts += [str(meta.get("n", "")), str(meta.get("r", "")), str(meta.get("p", ""))]
@@ -53,49 +176,10 @@ def _hmac_data(meta, salt, nonce, ct):
     return meta_bytes + b"|" + salt + nonce + ct
 
 
-def set_private_key(profile_name, private_key, password):
-    if not password:
-        return False, "Password is required to store private key"
-    try:
-        PROFILES_DIR.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        pass
-    secret_file = _secret_path(profile_name)
-    salt = os.urandom(16)
-    enc_key, mac_key, meta = _derive_keys(password, salt, {"kdf": "scrypt"})
-    nonce = os.urandom(16)
-    counter = pyaes.Counter(int.from_bytes(nonce, "big"))
-    aes = pyaes.AESModeOfOperationCTR(enc_key, counter=counter)
-    ct = aes.encrypt((private_key or "").encode())
-    mac = hmac.new(mac_key, _hmac_data(meta, salt, nonce, ct), hashlib.sha256).digest()
-    blob = {
-        "v": 1,
-        "kdf": meta.get("kdf"),
-        "n": meta.get("n"),
-        "r": meta.get("r"),
-        "p": meta.get("p"),
-        "iters": meta.get("iters"),
-        "salt": base64.b64encode(salt).decode(),
-        "nonce": base64.b64encode(nonce).decode(),
-        "ct": base64.b64encode(ct).decode(),
-        "hmac": base64.b64encode(mac).decode(),
-    }
-    try:
-        secret_file.parent.mkdir(parents=True, exist_ok=True)
-        secret_file.write_text(json.dumps(blob))
-        try:
-            os.chmod(secret_file, 0o600)
-        except Exception:
-            pass
-    except Exception as e:
-        return False, str(e)
-    return True, None
-
-
-def get_private_key(profile_name, password, return_error=False):
+def legacy_get_private_key(profile_name, password, return_error=False):
     if not password:
         return (None, "NO_PASSWORD") if return_error else None
-    secret_file = _secret_path(profile_name)
+    secret_file = _legacy_secret_path(profile_name)
     if not secret_file.exists():
         return (None, "MISSING") if return_error else None
     try:
@@ -113,8 +197,8 @@ def get_private_key(profile_name, password, return_error=False):
         "p": blob.get("p"),
         "iters": blob.get("iters"),
     }
-    enc_key, mac_key, _ = _derive_keys(password, salt, meta)
-    expected = hmac.new(mac_key, _hmac_data(meta, salt, nonce, ct), hashlib.sha256).digest()
+    enc_key, mac_key, _ = _legacy_derive_keys(password, salt, meta)
+    expected = hmac.new(mac_key, _legacy_hmac_data(meta, salt, nonce, ct), hashlib.sha256).digest()
     if not hmac.compare_digest(expected, mac):
         return (None, "BAD_PASSWORD") if return_error else None
     try:
@@ -126,8 +210,8 @@ def get_private_key(profile_name, password, return_error=False):
         return (None, "DECRYPT_FAILED") if return_error else None
 
 
-def delete_private_key(profile_name):
-    secret_file = _secret_path(profile_name)
+def legacy_delete_secret(profile_name):
+    secret_file = _legacy_secret_path(profile_name)
     try:
         if secret_file.exists():
             secret_file.unlink()

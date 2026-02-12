@@ -7,7 +7,7 @@ Fork des ursprünglichen wireguard_qml, angepasst und gepflegt für Geräte der 
 - QR/ZIP/Import‑Support für .conf‑Configs
 - Zusätzliche Routen und DNS pro Profil
 - PreUp‑Hooks (Befehle vor dem Hochfahren der Schnittstelle)
-- Verschlüsselte Speicherung privater Schlüssel (passwortbasiert)
+- Root‑only Speicherung privater Schlüssel (0600) unter `/home/phablet/.local/share/wireguard.sysadmin/keys`
 
 ## Screenshots
 ![Hauptbildschirm](screenshots/screenshot20260210_132652130.png)

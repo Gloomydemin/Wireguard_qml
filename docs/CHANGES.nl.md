@@ -1,11 +1,15 @@
 # Projectwijzigingen & Functieoverzicht
 
-Laatst bijgewerkt: 2026-02-11
+Laatst bijgewerkt: 2026-02-12
 
 Dit document beschrijft de recente wijzigingen en somt functies op die zijn toegevoegd of gewijzigd.
 Opmerking: bij updates het document niet herschrijven; voeg nieuwe wijzigingen toe met behoud van de structuur hieronder.
 
 ## Samenvatting van wijzigingen
+- Private keys worden nu opgeslagen als root‑only bestanden in `/home/phablet/.local/share/wireguard.sysadmin/keys` (0600), zonder wachtwoord‑encryptie.
+- Re‑encryptie‑flow/UI en private‑key‑cache in GUI/backend verwijderd.
+- `wg_config` staat een ontbrekende `PrivateKey` toe tot connect; sleutel wordt pas bij connect geladen.
+- Tests bijgewerkt voor sudo‑gebaseerde key‑opslag en `WIREGUARD_KEY_DIR`.
 - Versleutelde opslag van private keys met het **sudo‑wachtwoord** (geen externe secret service).
 - Her‑encryptieworkflow voor alle sleutels bij wachtwoordwijziging.
 - **PreUp**‑ondersteuning (import/export, UI‑veld en uitvoering vóór interface‑up).
@@ -23,12 +27,16 @@ Opmerking: bij updates het document niet herschrijven; voeg nieuwe wijzigingen t
 - `set_private_key(profile_name, private_key, password)` — versleutelt en slaat de sleutel op (scrypt/PBKDF2 + AES‑CTR + HMAC).
 - `get_private_key(profile_name, password, return_error=False)` — ontsleutelt de sleutel, geeft foutcode bij mislukking.
 - `delete_private_key(profile_name)` — verwijdert het versleutelde secret‑bestand.
+- Overgestapt naar root‑only sleutelbestanden in `KEY_DIR` (standaard `/home/phablet/.local/share/wireguard.sysadmin/keys`).
+- `WIREGUARD_KEY_DIR` voor tests/overrides; eerst `sudo -n` om wachtwoord‑stdin te vermijden bij gecachte credentials.
+- Legacy‑versleutelde opslag blijft alleen voor migratie.
 
 ### `src/pyaes.py` (nieuw)
 - Pure‑Python AES‑CTR‑implementatie, gebruikt door `secrets_store`.
 
 ### `src/wg_config.py` (nieuw)
 - `build_config(profile, private_key)` — bouwt wg‑quick‑compatibele configtekst uit profiel + sleutel.
+- `build_config(profile, private_key=None)` — laat `PrivateKey` weg als die ontbreekt.
 
 ### `src/vpn.py` (gewijzigd)
 - `Vpn.set_pwd(sudo_pwd)` — reset de in‑memory key‑cache.
@@ -47,6 +55,9 @@ Opmerking: bij updates het document niet herschrijven; voeg nieuwe wijzigingen t
 - `Vpn.rekey_secrets(old_pwd, new_pwd)` — her‑encrypteert alle opgeslagen sleutels.
 - `Vpn.delete_profile(profile)` — verwijdert het secret bij profielverwijdering.
 - `Vpn.list_profiles()` — gebruikt key‑cache (snellere lijst).
+- `Vpn.rekey_secrets(...)` — meldt nu dat re‑encryptie niet wordt ondersteund.
+- `Vpn.get_profile()` / `Vpn.list_profiles()` — geven geen `private_key` meer terug.
+- `_connect(...)` — laadt de sleutel on‑demand vóór het verbinden.
 
 ### `src/interface.py` (gewijzigd)
 - `_sudo_cmd()` / `_sudo_input()` — sudo‑wachtwoord via stdin.
@@ -80,6 +91,7 @@ Opmerking: bij updates het document niet herschrijven; voeg nieuwe wijzigingen t
 ### `qml/pages/SettingsPage.qml` (gewijzigd)
 - Re‑encrypt‑dialog (`rekey_secrets`) toegevoegd.
 - Initialiseert backend‑state via `root.pwd`.
+- Re‑encrypt‑dialog verwijderd (root‑only opslag).
 
 ### Tests & CI (nieuw)
 - `tests/test_secrets_store.py`
@@ -87,6 +99,7 @@ Opmerking: bij updates het document niet herschrijven; voeg nieuwe wijzigingen t
 - `tests/test_wg_config.py`
 - `.github/workflows/ci.yml`
 - `pytest.ini`
+- Tests ondersteunen `WIREGUARD_KEY_DIR` en worden overgeslagen zonder sudo‑toegang.
 
 ## Foutcodes uit secret‑opslag
 - `NO_PASSWORD` — wachtwoord niet opgegeven.

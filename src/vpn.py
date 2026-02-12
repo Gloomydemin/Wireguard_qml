@@ -278,9 +278,7 @@ class Vpn:
     def _migrate_profile_secret(self, profile_name, data):
         if not data:
             return
-        if secrets_store.secret_exists(profile_name):
-            return
-        if not self._sudo_pwd:
+        if secrets_store.secret_exists(profile_name, self._sudo_pwd):
             return
         priv = data.get("private_key")
         if not priv:
@@ -291,7 +289,10 @@ class Vpn:
                 except Exception:
                     priv = None
         if not priv:
-            return
+            if secrets_store.legacy_secret_exists(profile_name):
+                priv, _err = secrets_store.legacy_get_private_key(profile_name, self._sudo_pwd, return_error=True)
+            if not priv:
+                return
         ok, err = secrets_store.set_private_key(profile_name, priv, self._sudo_pwd)
         if not ok:
             return
@@ -310,21 +311,25 @@ class Vpn:
                 cfg.unlink()
         except Exception:
             pass
+        try:
+            secrets_store.legacy_delete_secret(profile_name)
+        except Exception:
+            pass
 
     def _get_private_key_status(self, profile_name, data=None):
         key, err = secrets_store.get_private_key(profile_name, self._sudo_pwd, return_error=True)
         if key:
-            self._privkey_cache[profile_name] = key
             return key, None
+        if err and err not in ("MISSING",):
+            return None, err
 
-        if secrets_store.secret_exists(profile_name):
+        if secrets_store.secret_exists(profile_name, self._sudo_pwd):
             return None, err or "UNREADABLE"
 
         if data:
             self._migrate_profile_secret(profile_name, data)
             key, err = secrets_store.get_private_key(profile_name, self._sudo_pwd, return_error=True)
             if key:
-                self._privkey_cache[profile_name] = key
                 return key, None
 
             legacy = data.get("private_key")
@@ -335,7 +340,6 @@ class Vpn:
                 if ok:
                     data.pop("private_key", None)
                     self._write_profile(profile_name, data)
-                    self._privkey_cache[profile_name] = legacy
                     return legacy, None
                 return None, "STORE_FAILED"
 
@@ -354,7 +358,6 @@ class Vpn:
                         key_file.unlink()
                     except Exception:
                         pass
-                    self._privkey_cache[profile_name] = legacy
                     return legacy, None
                 return None, "STORE_FAILED"
 
@@ -433,16 +436,17 @@ class Vpn:
             key, err = self._get_private_key_status(profile_name, profile)
             if not key:
                 if err == "BAD_PASSWORD":
-                    return "Wrong password. Re-open the app and enter the correct password or re-encrypt keys in Settings."
+                    return "Wrong password. Re-open the app and enter the correct password."
                 if err == "NO_PASSWORD":
-                    return "Password is required to decrypt private keys."
+                    return "Password is required to access private keys."
                 if err == "STORE_FAILED":
                     return "Failed to store private key."
                 return "Private key not available."
-            profile["private_key"] = key
             profile = self._ensure_unique_interface_name(profile_name, profile)
             self._disconnect_other_interfaces(profile.get('interface_name'))
-            return self.interface._connect(profile, PROFILES_DIR / profile_name / 'config.ini', use_kmod)
+            profile_with_key = dict(profile)
+            profile_with_key["private_key"] = key
+            return self.interface._connect(profile_with_key, PROFILES_DIR / profile_name / 'config.ini', use_kmod)
         except Exception as e:
             return str(e)
 
@@ -494,7 +498,7 @@ class Vpn:
         existing_profiles = self._load_profiles()
         use_existing_key = False
         if not private_key:
-            if profile_name in existing_profiles and secrets_store.secret_exists(profile_name):
+            if profile_name in existing_profiles and secrets_store.secret_exists(profile_name, self._sudo_pwd):
                 use_existing_key = True
             else:
                 return 'Private key is required'
@@ -576,10 +580,12 @@ class Vpn:
 
         interface_name = self._unique_interface_name(interface_name or f"wg_{profile_name}", used)
         if not use_existing_key:
-            if not self._sudo_pwd:
-                return "Password is required to store private key"
             ok, err = secrets_store.set_private_key(profile_name, private_key, self._sudo_pwd)
             if not ok:
+                if err == "NO_PASSWORD":
+                    return "Password is required to store private key"
+                if err == "BAD_PASSWORD":
+                    return "Wrong password. Re-open the app and enter the correct password."
                 return f"Secret storage error: {err}"
 
         profile = {'peers': peers,
@@ -1073,7 +1079,7 @@ class Vpn:
         PROFILE_DIR = PROFILES_DIR / profile
         print(PROFILE_DIR)
         try:
-            secrets_store.delete_private_key(profile)
+            secrets_store.delete_private_key(profile, self._sudo_pwd)
         except Exception:
             pass
         try:
@@ -1082,64 +1088,14 @@ class Vpn:
             return f'Error: {PROFILE_DIR}: {e.strerror}'
 
     def rekey_secrets(self, old_pwd, new_pwd):
-        if not old_pwd or not new_pwd:
-            return "Old and new passwords are required"
-        failures = []
-        for profile_json in PROFILES_DIR.glob("*/profile.json"):
-            profile_name = profile_json.parent.name
-            try:
-                data = json.loads(profile_json.read_text())
-            except Exception:
-                data = {}
-
-            key, err = secrets_store.get_private_key(profile_name, old_pwd, return_error=True)
-            if not key:
-                # try legacy
-                legacy = data.get("private_key")
-                if not legacy:
-                    key_file = profile_json.parent / "privkey"
-                    if key_file.exists():
-                        try:
-                            legacy = key_file.read_text().strip()
-                        except Exception:
-                            legacy = None
-                if legacy:
-                    key = legacy
-                else:
-                    failures.append(f"{profile_name}: {err or 'MISSING'}")
-                    continue
-
-            ok, err2 = secrets_store.set_private_key(profile_name, key, new_pwd)
-            if not ok:
-                failures.append(f"{profile_name}: {err2}")
-                continue
-
-            data.pop("private_key", None)
-            try:
-                self._write_profile(profile_name, data)
-            except Exception:
-                pass
-            for legacy_name in ("privkey", "config.ini"):
-                try:
-                    legacy_path = profile_json.parent / legacy_name
-                    if legacy_path.exists():
-                        legacy_path.unlink()
-                except Exception:
-                    pass
-
-        if failures:
-            return "Re-encryption failed: " + "; ".join(failures[:5]) + (" ..." if len(failures) > 5 else "")
-        return None
+        return "Re-encryption is not supported with root-only key storage"
 
 
     def get_profile(self, profile):
         with (PROFILES_DIR / profile / 'profile.json').open() as fd:
             data = json.load(fd)
             self._migrate_profile_secret(profile, data)
-            key, err = self._get_private_key_status(profile, data)
-            data['private_key'] = key or ""
-            if err:
-                data['private_key_error'] = err
+            data['private_key'] = ""
             return data
 
     def list_profiles(self):
@@ -1152,7 +1108,7 @@ class Vpn:
             except Exception:
                 continue  # skip broken files
             self._migrate_profile_secret(path.parent.name, data)
-            data['private_key'] = self._privkey_cache.get(path.parent.name, "")
+            data['private_key'] = ""
             raw_profiles[path.parent.name] = data
 
         active_by_privkey = {}

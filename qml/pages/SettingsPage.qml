@@ -143,14 +143,6 @@ UITK.Page {
             }
 
             SettingsItem {
-                title: i18n.tr("Re-encrypt stored keys")
-                description: i18n.tr("Use when your password has changed")
-                onClicked: {
-                    Popups.PopupUtils.open(rekeyDialogComponent, settingsPage)
-                }
-            }
-
-            SettingsItem {
                 title: i18n.tr("Re-check kernel module")
                 description: i18n.tr("Run kernel and sudo check wizard")
                 onClicked: {
@@ -183,58 +175,6 @@ UITK.Page {
             }
 
             Rectangle { height: units.gu(2); width: 1; color: "transparent" }
-        }
-    }
-
-    Component {
-        id: rekeyDialogComponent
-        Popups.Dialog {
-            id: rekeyDialog
-            title: i18n.tr("Re-encrypt keys")
-            text: i18n.tr("Enter old and new password")
-
-            UITK.TextField {
-                id: oldPwdField
-                placeholderText: i18n.tr("Old password")
-                echoMode: TextInput.Password
-            }
-            UITK.TextField {
-                id: newPwdField
-                placeholderText: i18n.tr("New password")
-                echoMode: TextInput.Password
-            }
-
-            RowLayout {
-                spacing: units.gu(1)
-                UITK.Button {
-                    text: i18n.tr("Cancel")
-                    onClicked: Popups.PopupUtils.close(rekeyDialog)
-                }
-                UITK.Button {
-                    text: i18n.tr("Re-encrypt")
-                    color: UITK.LomiriColors.green
-                    onClicked: {
-                        if (!oldPwdField.text || !newPwdField.text) {
-                            toast.show(i18n.tr("Both passwords are required"))
-                            return
-                        }
-                        python.call('vpn.instance.rekey_secrets',
-                                    [oldPwdField.text, newPwdField.text],
-                                    function (err) {
-                                        if (err) {
-                                            toast.show(i18n.tr("Re-encrypt failed: ") + err)
-                                        } else {
-                                            toast.show(i18n.tr("Keys re-encrypted"))
-                                            if (typeof root !== "undefined") {
-                                                root.pwd = newPwdField.text
-                                            }
-                                            python.call('vpn.instance.set_pwd', [newPwdField.text], function(){})
-                                            Popups.PopupUtils.close(rekeyDialog)
-                                        }
-                                    })
-                    }
-                }
-            }
         }
     }
 

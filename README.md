@@ -9,7 +9,7 @@ Fork of the original wireguard_qml adapted and maintained for Ubuntu Touch commu
 - QR/zip/import support for .conf configs
 - Extra routes and DNS per profile
 - PreUp hooks (run commands before interface up)
-- Encrypted private key storage (password-based)
+- Root-only private key storage (0600) under `/home/phablet/.local/share/wireguard.sysadmin/keys`
 
 ## Screenshots
 ![Main screen](screenshots/screenshot20260210_132652130.png)

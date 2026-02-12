@@ -1,11 +1,12 @@
-def build_config(profile, private_key):
+def build_config(profile, private_key=None):
     profile_name = profile.get("profile_name") or ""
     lines = [
         "[Interface]",
         f"#Profile = {profile_name}",
-        f"PrivateKey = {private_key or ''}",
-        "",
     ]
+    if private_key is not None:
+        lines.append(f"PrivateKey = {private_key or ''}")
+    lines.append("")
 
     for peer in profile.get("peers", []):
         lines.append("[Peer]")

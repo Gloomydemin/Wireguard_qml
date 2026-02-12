@@ -7,7 +7,7 @@ Fork van het originele wireguard_qml, aangepast en onderhouden voor Ubuntu‑Tou
 - QR/zip/import‑support voor .conf‑configuraties
 - Extra routes en DNS per profiel
 - PreUp‑hooks (commando’s vóór het omhoogbrengen van de interface)
-- Versleutelde opslag van private keys (wachtwoord‑gebaseerd)
+- Root‑only opslag van private keys (0600) onder `/home/phablet/.local/share/wireguard.sysadmin/keys`
 
 ## Screenshots
 ![Hoofdscherm](screenshots/screenshot20260210_132652130.png)
