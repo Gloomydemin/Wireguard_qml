@@ -6,8 +6,9 @@ Fork van het originele wireguard_qml, aangepast en onderhouden voor Ubuntu‑Tou
 - Userspace‑fallback (wireguard‑go) als de kernelmodule ontbreekt
 - QR/zip/import‑support voor .conf‑configuraties
 - Extra routes en DNS per profiel
-- PreUp‑hooks (commando’s vóór het omhoogbrengen van de interface)
+- Hooks (PreUp/PostUp/PreDown/PostDown)
 - Root‑only opslag van private keys (0600) onder `/home/phablet/.local/share/wireguard.sysadmin/keys`
+- Snellere ZIP‑import en profielenlijst (één key‑scan; minder sudo)
 
 ## Screenshots
 ![Hoofdscherm](screenshots/screenshot20260210_132652130.png)
@@ -34,15 +35,23 @@ WireGuard aan een UT‑kernel toevoegen: https://www.wireguard.com/compilation/
 ## Configs exporteren
 Alle profielen kunnen worden geëxporteerd via Instellingen → “Export tunnels to zip file” naar `/home/phablet/Downloads/wireguard.zip` (bestand wordt automatisch genummerd bij bestaande naam).
 
-## PreUp (gebruik)
-PreUp wordt **voor** het omhoogbrengen van de interface uitgevoerd. Handig voor voorbereidende taken (routes, regels, enz.).
+## Hooks (gebruik)
+Hooks draaien als root rond connect/disconnect:
+- `PreUp` — vóór interface‑up
+- `PostUp` — na interface‑up
+- `PreDown` — vóór interface‑down
+- `PostDown` — na interface‑down
 
 Stappen:
 1. Open een profiel.
-2. Vul het veld “PreUp command” in.
+2. Vul de gewenste hook‑velden in.
 3. Scheid meerdere commando’s met `;` of zet ze op aparte regels.
 
-Voorbeeld:
+Notities:
+- Safe‑mode blokkeert onveilige of ontbrekende commando’s.
+- Hooks uit geïmporteerde configs worden genegeerd.
+
+Voorbeeld (PreUp):
 ```
 ip rule add fwmark 51820 table 51820
 ip route add default dev wg0 table 51820

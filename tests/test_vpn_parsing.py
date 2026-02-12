@@ -45,9 +45,19 @@ def test_parse_conf_lines_basic():
         "Endpoint = vpn.example.com:51820",
     ]
 
-    profile_name, ip_address, private_key, iface, extra_routes, dns, peers, pre_up = v._parse_wireguard_conf_lines(
-        lines, "default"
-    )
+    (
+        profile_name,
+        ip_address,
+        private_key,
+        iface,
+        extra_routes,
+        dns,
+        peers,
+        pre_up,
+        post_up,
+        pre_down,
+        post_down,
+    ) = v._parse_wireguard_conf_lines(lines, "default")
 
     assert profile_name == "My_VPN"
     assert iface == "wg_My_VPN"
@@ -55,6 +65,9 @@ def test_parse_conf_lines_basic():
     assert dns == "1.1.1.1"
     assert len(peers) == 1
     assert pre_up == ""
+    assert post_up == ""
+    assert pre_down == ""
+    assert post_down == ""
     assert peers[0]["endpoint"] == "vpn.example.com:51820"
 
 
@@ -113,6 +126,9 @@ def test_save_profile_keeps_existing_private_key():
         "",
         "",
         "",
+        "",
+        "",
+        "",
         peers,
     )
     assert err is None
@@ -131,6 +147,9 @@ def test_parse_conf_lines_with_comments_and_repeats():
         "DNS = 8.8.8.8",
         "PreUp = echo one",
         "PreUp = echo two # trailing",
+        "PostUp = echo post",
+        "PreDown = echo predown",
+        "PostDown = echo postdown",
         "",
         "[Peer]",
         "PublicKey = pubkey",
@@ -139,9 +158,19 @@ def test_parse_conf_lines_with_comments_and_repeats():
         "Endpoint = vpn.example.com:51820 # comment",
     ]
 
-    profile_name, ip_address, private_key, iface, extra_routes, dns, peers, pre_up = v._parse_wireguard_conf_lines(
-        lines, "default"
-    )
+    (
+        profile_name,
+        ip_address,
+        private_key,
+        iface,
+        extra_routes,
+        dns,
+        peers,
+        pre_up,
+        post_up,
+        pre_down,
+        post_down,
+    ) = v._parse_wireguard_conf_lines(lines, "default")
 
     assert profile_name == "Demo_VPN"
     assert iface == "wg_Demo_VPN"
@@ -149,6 +178,9 @@ def test_parse_conf_lines_with_comments_and_repeats():
     assert ip_address == "10.0.0.2/32, 10.0.0.3/32"
     assert dns == "1.1.1.1, 8.8.8.8"
     assert pre_up == "echo one\necho two"
+    assert post_up == "echo post"
+    assert pre_down == "echo predown"
+    assert post_down == "echo postdown"
     assert len(peers) == 1
     assert peers[0]["allowed_prefixes"] == "0.0.0.0/0, ::/0"
     assert peers[0]["endpoint"] == "vpn.example.com:51820"

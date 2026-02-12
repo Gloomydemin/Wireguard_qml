@@ -6,6 +6,11 @@ Dit document beschrijft de recente wijzigingen en somt functies op die zijn toeg
 Opmerking: bij updates het document niet herschrijven; voeg nieuwe wijzigingen toe met behoud van de structuur hieronder.
 
 ## Samenvatting van wijzigingen
+- Geoptimaliseerde sleutelcontrole: één scan van de key‑map (minder sudo, snellere profielenlijst).
+- ZIP‑import parseert configs direct uit het archief (geen tijdelijke bestanden), sneller.
+- Volledige hook‑support: PreUp/PostUp/PreDown/PostDown met safe‑validatie.
+- Hooks genegeerd bij import; waarschuwing vóór uitvoering.
+- Private‑key‑veld toont maskering (geen plaintext).
 - Private keys worden nu opgeslagen als root‑only bestanden in `/home/phablet/.local/share/wireguard.sysadmin/keys` (0600), zonder wachtwoord‑encryptie.
 - Re‑encryptie‑flow/UI en private‑key‑cache in GUI/backend verwijderd.
 - `wg_config` staat een ontbrekende `PrivateKey` toe tot connect; sleutel wordt pas bij connect geladen.
@@ -27,6 +32,7 @@ Opmerking: bij updates het document niet herschrijven; voeg nieuwe wijzigingen t
 - `set_private_key(profile_name, private_key, password)` — versleutelt en slaat de sleutel op (scrypt/PBKDF2 + AES‑CTR + HMAC).
 - `get_private_key(profile_name, password, return_error=False)` — ontsleutelt de sleutel, geeft foutcode bij mislukking.
 - `delete_private_key(profile_name)` — verwijdert het versleutelde secret‑bestand.
+- `list_private_keys(sudo_pwd=None)` — lijst met sleutels via één sudo‑call (snellere profielenlijst).
 - Overgestapt naar root‑only sleutelbestanden in `KEY_DIR` (standaard `/home/phablet/.local/share/wireguard.sysadmin/keys`).
 - `WIREGUARD_KEY_DIR` voor tests/overrides; eerst `sudo -n` om wachtwoord‑stdin te vermijden bij gecachte credentials.
 - Legacy‑versleutelde opslag blijft alleen voor migratie.
@@ -40,9 +46,9 @@ Opmerking: bij updates het document niet herschrijven; voeg nieuwe wijzigingen t
 
 ### `src/vpn.py` (gewijzigd)
 - `Vpn.set_pwd(sudo_pwd)` — reset de in‑memory key‑cache.
-- `Vpn._load_profiles()` — triggert secret‑migratie (indien nodig).
+- `Vpn._load_profiles()` — triggert secret‑migratie (indien nodig) en hergebruikt één key‑scan.
 - `Vpn._write_profile()` — verwijdert `private_key` vóór het schrijven van `profile.json`.
-- `Vpn._migrate_profile_secret(profile_name, data)` — verplaatst legacy‑sleutel naar versleutelde opslag.
+- `Vpn._migrate_profile_secret(profile_name, data, existing_keys=None)` — verplaatst legacy‑sleutel naar versleutelde opslag, met optionele key‑cache.
 - `Vpn._get_private_key_status(profile_name, data=None)` — retourneert `(key, error_code)`.
 - `Vpn._get_private_key(profile_name, data=None)` — wrapper die alleen de sleutel teruggeeft.
 - `Vpn._connect(profile_name, use_kmod)` — behandelt ontbrekend/verkeerd wachtwoord expliciet.
@@ -50,14 +56,20 @@ Opmerking: bij updates het document niet herschrijven; voeg nieuwe wijzigingen t
   - **signatuur gewijzigd**: `pre_up` toegevoegd.
   - slaat de sleutel op in versleutelde opslag in plaats van in `profile.json`.
 - `Vpn.import_conf(...) / Vpn.import_conf_text(...)` — parseert en slaat `PreUp` op.
+- `Vpn.import_conf(...)` — ZIP‑import in geheugen (geen tijdelijke bestanden).
 - `Vpn._parse_wireguard_conf_lines(...)` — retourneert `pre_up` als laatste tuple‑element.
 - `Vpn.export_confs_zip()` — exporteert `PreUp` en gebruikt de ontsleutelde sleutel.
 - `Vpn.rekey_secrets(old_pwd, new_pwd)` — her‑encrypteert alle opgeslagen sleutels.
 - `Vpn.delete_profile(profile)` — verwijdert het secret bij profielverwijdering.
-- `Vpn.list_profiles()` — gebruikt key‑cache (snellere lijst).
+- `Vpn.list_profiles()` — gebruikt key‑lijst (snellere lijst).
+- `Vpn.get_profile()` / `Vpn.list_profiles()` — `has_private_key` via één key‑scan.
 - `Vpn.rekey_secrets(...)` — meldt nu dat re‑encryptie niet wordt ondersteund.
 - `Vpn.get_profile()` / `Vpn.list_profiles()` — geven geen `private_key` meer terug.
 - `_connect(...)` — laadt de sleutel on‑demand vóór het verbinden.
+- `Vpn.save_profile(...)` — signatuur uitgebreid met `post_up`, `pre_down`, `post_down`.
+- `import_conf*()` — hooks worden genegeerd bij import.
+- `parse_wireguard_conf*()` — parseert `PostUp/PreDown/PostDown`.
+- `export_confs_zip()` — exporteert `PostUp/PreDown/PostDown`.
 
 ### `src/interface.py` (gewijzigd)
 - `_sudo_cmd()` / `_sudo_input()` — sudo‑wachtwoord via stdin.
@@ -69,6 +81,9 @@ Opmerking: bij updates het document niet herschrijven; voeg nieuwe wijzigingen t
   - voert `PreUp`‑commando’s uit vóór interface‑up.
 - `disconnect(...)` — wist IPv6‑routes en verwijdert endpoint‑routes voor v6.
 - `_get_wg_status()` — sudo‑wachtwoord via stdin.
+- Safe‑validatie voor hooks + controle op aanwezige binaries.
+- `PostUp` na interface/routing/DNS.
+- `PreDown`/`PostDown` tijdens disconnect.
 
 ### `src/daemon.py` (gewijzigd)
 - Leest sudo‑wachtwoord van stdin.
@@ -79,11 +94,13 @@ Opmerking: bij updates het document niet herschrijven; voeg nieuwe wijzigingen t
 - Stelt `settings` beschikbaar via alias, globale `canUseKmod` toegevoegd.
 
 ### `qml/pages/ProfilePage.qml` (gewijzigd)
-- `PreUp`‑veld toegevoegd en opgeslagen via `save_profile`.
+- `PreUp/PostUp/PreDown/PostDown`‑velden toegevoegd en opgeslagen.
+- Private‑key‑veld toont maskering als er een sleutel is.
 
 ### `qml/pages/PickProfilePage.qml` (gewijzigd)
 - Gebruikt globale backend‑instelling en voegt een gekleurde backend‑indicator toe.
 - Geeft `pre_up` door aan de profiel‑editor.
+- Waarschuwt vóór hook‑uitvoering en geeft alle hook‑velden door.
 
 ### `qml/pages/QrScanPage.qml` (gewijzigd)
 - Ruimt tijdelijke QR‑afbeeldingen op na decoderen.
@@ -100,6 +117,7 @@ Opmerking: bij updates het document niet herschrijven; voeg nieuwe wijzigingen t
 - `.github/workflows/ci.yml`
 - `pytest.ini`
 - Tests ondersteunen `WIREGUARD_KEY_DIR` en worden overgeslagen zonder sudo‑toegang.
+- Parsing‑tests bijgewerkt voor PostUp/PreDown/PostDown.
 
 ## Foutcodes uit secret‑opslag
 - `NO_PASSWORD` — wachtwoord niet opgegeven.

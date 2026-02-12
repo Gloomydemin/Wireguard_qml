@@ -7,16 +7,23 @@ import io.thp.pyotherside 1.3
 import "../components"
 
 UITK.Page {
+    Toast { id: toast }
+
     property bool isEditing: false
     property bool isImported: false
     property string errorMsg
     property string profileName
     property string ipAddress
     property string privateKey
+    property bool hasPrivateKey: false
     property string extraRoutes
     property string dnsServers
     property string interfaceName
     property string preUp
+    property string postUp
+    property string preDown
+    property string postDown
+    property string privateKeyMask: "*************************************"
 
     property variant peers: []
 
@@ -64,7 +71,9 @@ UITK.Page {
                 MyTextField {
                     id: privateKeyField
                     title: i18n.tr("Private Key")
-                    placeholder: "a2VlcCB0aGlzIHNlY3JldAo="
+                    placeholder: (isEditing && hasPrivateKey && (!privateKey || privateKey.length === 0))
+                                 ? privateKeyMask
+                                 : "a2VlcCB0aGlzIHNlY3JldAo="
                     text: privateKey
                     onChanged: {
                         errorMsg = ''
@@ -125,6 +134,33 @@ UITK.Page {
                     onChanged: {
                         errorMsg = ''
                         preUp = text
+                    }
+                }
+                MyTextField {
+                    title: i18n.tr("PostUp command")
+                    text: postUp
+                    placeholder: i18n.tr("Optional command to run after interface up")
+                    onChanged: {
+                        errorMsg = ''
+                        postUp = text
+                    }
+                }
+                MyTextField {
+                    title: i18n.tr("PreDown command")
+                    text: preDown
+                    placeholder: i18n.tr("Optional command to run before interface down")
+                    onChanged: {
+                        errorMsg = ''
+                        preDown = text
+                    }
+                }
+                MyTextField {
+                    title: i18n.tr("PostDown command")
+                    text: postDown
+                    placeholder: i18n.tr("Optional command to run after interface down")
+                    onChanged: {
+                        errorMsg = ''
+                        postDown = text
                     }
                 }
             }
@@ -262,7 +298,7 @@ UITK.Page {
                     }
 
                     python.call('vpn.instance.save_profile',
-                                [profileName, ipAddress, privateKey, interfaceName, extraRoutes, dnsServers, preUp, _peers],
+                                [profileName, ipAddress, privateKey, interfaceName, extraRoutes, dnsServers, preUp, postUp, preDown, postDown, _peers],
                                 function (error) {
                                     if (!error) {
                                         if (!isEditing) {

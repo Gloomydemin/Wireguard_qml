@@ -5,6 +5,8 @@ import socket
 import json
 import re
 import tempfile
+import shlex
+import shutil
 
 from pathlib import Path
 
@@ -15,6 +17,55 @@ from wg_config import build_config
 WG_PATH = resolve_vendor_binary("wg")
 WIREGUARD_GO_PATH = resolve_vendor_binary("wireguard")
 log = logging.getLogger(__name__)
+
+SAFE_PREUP_ALLOWED = {
+    "ip",
+    "iptables",
+    "ip6tables",
+    "nft",
+    "sysctl",
+    "wg",
+    "wg-quick",
+}
+SAFE_PREUP_BLOCK_CHARS = set("|&><`$(){}[]")
+
+def _resolve_preup_binary(name):
+    if not name:
+        return None
+    if os.path.isabs(name):
+        return name if os.path.exists(name) else None
+    resolved = shutil.which(name)
+    if not resolved:
+        for candidate in (
+            f"/usr/sbin/{name}",
+            f"/sbin/{name}",
+            f"/usr/bin/{name}",
+            f"/bin/{name}",
+        ):
+            if os.path.exists(candidate):
+                resolved = candidate
+                break
+    return resolved
+
+def _validate_preup_command(cmd, hook_name="PreUp"):
+    if any(ch in cmd for ch in SAFE_PREUP_BLOCK_CHARS):
+        return None, f"{hook_name} contains unsafe shell characters"
+    try:
+        args = shlex.split(cmd)
+    except ValueError:
+        return None, f"{hook_name} has invalid quoting"
+    if not args:
+        return None, f"{hook_name} command is empty"
+    base = os.path.basename(args[0])
+    if base not in SAFE_PREUP_ALLOWED:
+        return None, f"{hook_name} command not allowed in safe mode: {base}"
+    if "/" in args[0] and not os.path.isabs(args[0]):
+        return None, f"{hook_name} command path must be absolute"
+    resolved = _resolve_preup_binary(args[0] if "/" in args[0] else base)
+    if not resolved:
+        return None, f"{hook_name} command not available on this system: {base}"
+    args[0] = resolved
+    return args, None
 
 class Interface:
     def __init__(self, sudo_pwd):
@@ -315,10 +366,19 @@ class Interface:
 
         # PreUp hooks (wg-quick compatible)
         pre_up = (profile.get('pre_up') or '').strip()
+        safe_preup = profile.get('safe_preup', True)
         if pre_up:
             for cmd in [c.strip() for c in re.split(r'[;\\n]+', pre_up) if c.strip()]:
                 log.info('Running PreUp: %s', cmd)
-                res = sudo_run(['/bin/sh', '-c', cmd], check=False)
+                if safe_preup:
+                    args, err = _validate_preup_command(cmd, "PreUp")
+                    if err:
+                        err_msg = f'PreUp blocked by safe mode: {cmd}'
+                        log.error('%s (%s)', err_msg, err)
+                        return err_msg
+                    res = sudo_run(args, check=False)
+                else:
+                    res = sudo_run(['/bin/sh', '-c', cmd], check=False)
                 if res.returncode != 0:
                     err = f'PreUp failed: {cmd}'
                     log.error(err)
@@ -414,6 +474,25 @@ class Interface:
             else:
                 sudo_run(['ip', 'route', 'replace', extra_route, 'dev', interface_name], check=False)
 
+        # PostUp hooks (wg-quick compatible)
+        post_up = (profile.get('post_up') or '').strip()
+        if post_up:
+            for cmd in [c.strip() for c in re.split(r'[;\\n]+', post_up) if c.strip()]:
+                log.info('Running PostUp: %s', cmd)
+                if safe_preup:
+                    args, err = _validate_preup_command(cmd, "PostUp")
+                    if err:
+                        err_msg = f'PostUp blocked by safe mode: {cmd}'
+                        log.error('%s (%s)', err_msg, err)
+                        return err_msg
+                    res = sudo_run(args, check=False)
+                else:
+                    res = sudo_run(['/bin/sh', '-c', cmd], check=False)
+                if res.returncode != 0:
+                    err = f'PostUp failed: {cmd}'
+                    log.error(err)
+                    return err
+
         return None
 
 
@@ -445,6 +524,27 @@ class Interface:
                 if data.get('interface_name') == interface_name:
                     profile = data
                     break
+
+        safe_preup = profile.get('safe_preup', True) if profile else True
+
+        # PreDown hooks (wg-quick compatible)
+        pre_down = (profile.get('pre_down') or '').strip() if profile else ""
+        if pre_down:
+            for cmd in [c.strip() for c in re.split(r'[;\\n]+', pre_down) if c.strip()]:
+                log.info('Running PreDown: %s', cmd)
+                if safe_preup:
+                    args, err = _validate_preup_command(cmd, "PreDown")
+                    if err:
+                        err_msg = f'PreDown blocked by safe mode: {cmd}'
+                        log.error('%s (%s)', err_msg, err)
+                        continue
+                    res = sudo_run(args, check=False)
+                else:
+                    res = sudo_run(['/bin/sh', '-c', cmd], check=False)
+                if res.returncode != 0:
+                    err = f'PreDown failed: {cmd}'
+                    log.error(err)
+                    continue
 
         # Check if interface exists
         iface_exists = subprocess.run(
@@ -503,6 +603,25 @@ class Interface:
                     sudo_run(['ip', '-6', 'route', 'replace', 'default', 'via', default_gw_v6, 'dev', real_iface_v6])
             except Exception:
                 pass
+
+        # PostDown hooks (wg-quick compatible)
+        post_down = (profile.get('post_down') or '').strip() if profile else ""
+        if post_down:
+            for cmd in [c.strip() for c in re.split(r'[;\\n]+', post_down) if c.strip()]:
+                log.info('Running PostDown: %s', cmd)
+                if safe_preup:
+                    args, err = _validate_preup_command(cmd, "PostDown")
+                    if err:
+                        err_msg = f'PostDown blocked by safe mode: {cmd}'
+                        log.error('%s (%s)', err_msg, err)
+                        continue
+                    res = sudo_run(args, check=False)
+                else:
+                    res = sudo_run(['/bin/sh', '-c', cmd], check=False)
+                if res.returncode != 0:
+                    err = f'PostDown failed: {cmd}'
+                    log.error(err)
+                    continue
 
 
 

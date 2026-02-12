@@ -10,6 +10,8 @@ import "../components"
 UITK.Page {
     id: pickPage
 
+    Toast { id: toast }
+
     property bool hasActiveInterfaces: false
     property bool statusInFlight: false
     property var appPalette: (typeof theme !== "undefined" && theme && theme.palette)
@@ -32,6 +34,7 @@ UITK.Page {
     property bool useUserspace: (typeof root !== "undefined" && root.settings)
                                ? root.settings.useUserspace
                                : settings.useUserspace
+    property bool safePreUp: true
     header: UITK.PageHeader {
         id: header
         title: i18n.tr("Wireguard")
@@ -93,6 +96,71 @@ UITK.Page {
         })
     }
 
+    function connectProfile(index, profileName) {
+        // визуально показать, что начали подключение
+        listmodel.setProperty(index, 'c_status', {
+                                   init: true,
+                                   connecting: true,
+                                   peers: [],
+                                   started: Date.now() / 1000
+                               })
+        python.call('vpn.instance._connect',
+                    [profileName, !useUserspace, safePreUp],
+                    function (error_msg) {
+                        if (error_msg) {
+                            listmodel.setProperty(index, 'c_status', {
+                                                       init: false,
+                                                       connecting: false,
+                                                       peers: []
+                                                   })
+                            toast.show(i18n.tr("Failed:") + " " + error_msg)
+                            return
+                        }
+                        // сразу показать, что соединяемся/соединены; уточним после опроса
+                        listmodel.setProperty(index, 'c_status', {
+                                                   init: true,
+                                                   connecting: true,
+                                                   peers: [],
+                                                   started: Date.now() / 1000
+                                               })
+                        toast.show(i18n.tr('Connecting..'))
+                        statusKickoff.restart()
+                        showStatus()
+                    })
+    }
+
+    function buildHookSummary(preUpText, postUpText, preDownText, postDownText) {
+        var chunks = []
+        if (preUpText && preUpText.trim().length > 0) {
+            chunks.push("PreUp:\n" + preUpText.trim())
+        }
+        if (postUpText && postUpText.trim().length > 0) {
+            chunks.push("PostUp:\n" + postUpText.trim())
+        }
+        if (preDownText && preDownText.trim().length > 0) {
+            chunks.push("PreDown:\n" + preDownText.trim())
+        }
+        if (postDownText && postDownText.trim().length > 0) {
+            chunks.push("PostDown:\n" + postDownText.trim())
+        }
+        return chunks.join("\n\n")
+    }
+
+    function requestConnect(index, profileName, preUpText, postUpText, preDownText, postDownText) {
+        var summary = buildHookSummary(preUpText, postUpText, preDownText, postDownText)
+        if (summary && summary.length > 0) {
+            var dlg = Popups.PopupUtils.open(preUpWarningDialogComponent, pickPage, {
+                                                profileName: profileName,
+                                                hookText: summary
+                                             })
+            dlg.accepted.connect(function() {
+                connectProfile(index, profileName)
+            })
+            return
+        }
+        connectProfile(index, profileName)
+    }
+
     function handleImportResult(result) {
         importProgressModal.close()
         if (result.error) {
@@ -124,9 +192,13 @@ UITK.Page {
                         "peers": entry.peers || [],
                         "ipAddress": entry.ip_address || "",
                         "privateKey": entry.private_key || "",
+                        "hasPrivateKey": entry.has_private_key || false,
                         "extraRoutes": entry.extra_routes || "",
                         "dnsServers": entry.dns_servers || "",
                         "preUp": entry.pre_up || "",
+                        "postUp": entry.post_up || "",
+                        "preDown": entry.pre_down || "",
+                        "postDown": entry.post_down || "",
                         "interfaceName": entry.interface_name || "wg" + i,
                         "isImported": true
                     })
@@ -407,6 +479,59 @@ Component {
     }
 }
 
+Component {
+    id: preUpWarningDialogComponent
+    Popups.Dialog {
+        id: preUpDialog
+        property string profileName: ""
+        property string hookText: ""
+
+        signal accepted()
+        signal rejected()
+
+        title: i18n.tr("Hook warning")
+        text: i18n.tr("This profile contains hook commands (PreUp/PostUp/PreDown/PostDown). They will run as root.")
+
+        Column {
+            width: parent.width
+            spacing: units.gu(0.8)
+            UITK.Label {
+                text: i18n.tr("Commands:")
+                font.bold: true
+            }
+            UITK.Label {
+                text: hookText.length > 600 ? hookText.slice(0, 600) + "…" : hookText
+                wrapMode: Text.Wrap
+                color: "#d0d0d0"
+            }
+            UITK.Label {
+                text: i18n.tr("Safe mode blocks unsafe commands.")
+                wrapMode: Text.Wrap
+                color: tertiaryTextColor
+            }
+        }
+
+        RowLayout {
+            spacing: units.gu(1)
+            UITK.Button {
+                text: i18n.tr("Cancel")
+                onClicked: {
+                    preUpDialog.rejected()
+                    Popups.PopupUtils.close(preUpDialog)
+                }
+            }
+            UITK.Button {
+                text: i18n.tr("Run PreUp")
+                color: UITK.LomiriColors.green
+                onClicked: {
+                    preUpDialog.accepted()
+                    Popups.PopupUtils.close(preUpDialog)
+                }
+            }
+        }
+    }
+}
+
 
 // Модальное окно с индикатором загрузки
     Rectangle {
@@ -517,36 +642,7 @@ Component {
             onClicked: {
                 var status = statusObj()
                 if (!status.init) {
-                    // визуально показать, что начали подключение
-                    listmodel.setProperty(index, 'c_status', {
-                                               init: true,
-                                               connecting: true,
-                                               peers: [],
-                                               started: Date.now() / 1000
-                                           })
-                    python.call('vpn.instance._connect',
-                                [profile_name, !useUserspace],
-                                function (error_msg) {
-                                    if (error_msg) {
-                                        listmodel.setProperty(index, 'c_status', {
-                                                                   init: false,
-                                                                   connecting: false,
-                                                                   peers: []
-                                                               })
-                                        toast.show(i18n.tr("Failed:") + " " + error_msg)
-                                        return
-                                    }
-                                    // сразу показать, что соединяемся/соединены; уточним после опроса
-                                    listmodel.setProperty(index, 'c_status', {
-                                                               init: true,
-                                                               connecting: true,
-                                                               peers: [],
-                                                               started: Date.now() / 1000
-                                                           })
-                                    toast.show(i18n.tr('Connecting..'))
-                                    statusKickoff.restart()
-                                    showStatus()
-                                })
+                    requestConnect(index, profile_name, pre_up || "", post_up || "", pre_down || "", post_down || "")
                 } else {
                     python.call('vpn.instance.interface.disconnect', [interface_name],
                                 function () {
@@ -595,9 +691,13 @@ Component {
                                            "peers": peers,
                                            "ipAddress": ip_address,
                                            "privateKey": private_key,
+                                           "hasPrivateKey": has_private_key || false,
                                            "extraRoutes": extra_routes,
                                            "dnsServers": dns_servers,
                                            "preUp": pre_up,
+                                           "postUp": post_up,
+                                           "preDown": pre_down,
+                                           "postDown": post_down,
                                            "interfaceName": (!interface_name || interface_name.length == 0)
                                                             ? "wg" + index
                                                             : interface_name

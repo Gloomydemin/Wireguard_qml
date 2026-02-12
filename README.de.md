@@ -6,8 +6,9 @@ Fork des ursprünglichen wireguard_qml, angepasst und gepflegt für Geräte der 
 - Userspace‑Fallback (wireguard‑go), wenn kein Kernelmodul verfügbar ist
 - QR/ZIP/Import‑Support für .conf‑Configs
 - Zusätzliche Routen und DNS pro Profil
-- PreUp‑Hooks (Befehle vor dem Hochfahren der Schnittstelle)
+- Hooks (PreUp/PostUp/PreDown/PostDown)
 - Root‑only Speicherung privater Schlüssel (0600) unter `/home/phablet/.local/share/wireguard.sysadmin/keys`
+- Schnellere ZIP‑Imports und Profil‑Liste (ein Key‑Scan; weniger sudo)
 
 ## Screenshots
 ![Hauptbildschirm](screenshots/screenshot20260210_132652130.png)
@@ -34,15 +35,23 @@ Anleitungen zum Nachrüsten im UT‑Kernel: https://www.wireguard.com/compilatio
 ## Konfigurationen exportieren
 Alle Profile lassen sich über Einstellungen → „Export tunnels to zip file“ nach `/home/phablet/Downloads/wireguard.zip` exportieren (Dateiname wird bei Kollision hochgezählt).
 
-## PreUp (Verwendung)
-PreUp wird **vor** dem Hochfahren der Schnittstelle ausgeführt. Nützlich für vorbereitende Aufgaben (Routen, Regeln, usw.).
+## Hooks (Verwendung)
+Hooks laufen als root rund um connect/disconnect:
+- `PreUp` — vor Interface‑Up
+- `PostUp` — nach Interface‑Up
+- `PreDown` — vor Interface‑Down
+- `PostDown` — nach Interface‑Down
 
 So geht’s:
 1. Profil öffnen.
-2. Feld „PreUp command“ ausfüllen.
+2. Gewünschte Hook‑Felder ausfüllen.
 3. Mehrere Befehle mit `;` trennen oder in neue Zeilen schreiben.
 
-Beispiel:
+Hinweise:
+- Safe‑Mode blockiert unsichere Befehle und Befehle, die im System fehlen.
+- Hooks aus importierten Configs werden ignoriert.
+
+Beispiel (PreUp):
 ```
 ip rule add fwmark 51820 table 51820
 ip route add default dev wg0 table 51820

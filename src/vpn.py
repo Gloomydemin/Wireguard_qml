@@ -4,7 +4,6 @@ import shutil
 import base64
 import json
 import zipfile
-import tempfile
 import re
 import ctypes
 import urllib.parse
@@ -250,12 +249,13 @@ class Vpn:
         profiles = {}
         if not PROFILES_DIR.exists():
             return profiles
+        existing_keys = secrets_store.list_private_keys(self._sudo_pwd)
         for path in PROFILES_DIR.glob('*/profile.json'):
             try:
                 profiles[path.parent.name] = json.loads(path.read_text())
             except Exception:
                 continue
-            self._migrate_profile_secret(path.parent.name, profiles[path.parent.name])
+            self._migrate_profile_secret(path.parent.name, profiles[path.parent.name], existing_keys=existing_keys)
         return profiles
 
     def _write_profile(self, profile_name, profile):
@@ -275,10 +275,16 @@ class Vpn:
         except Exception:
             pass
 
-    def _migrate_profile_secret(self, profile_name, data):
+    def _migrate_profile_secret(self, profile_name, data, existing_keys=None):
         if not data:
             return
-        if secrets_store.secret_exists(profile_name, self._sudo_pwd):
+        if existing_keys is not None:
+            if profile_name in existing_keys:
+                return
+        else:
+            if secrets_store.secret_exists(profile_name, self._sudo_pwd):
+                return
+        if os.geteuid() != 0 and not self._sudo_pwd:
             return
         priv = data.get("private_key")
         if not priv:
@@ -296,6 +302,8 @@ class Vpn:
         ok, err = secrets_store.set_private_key(profile_name, priv, self._sudo_pwd)
         if not ok:
             return
+        if existing_keys is not None:
+            existing_keys.add(profile_name)
         if "private_key" in data:
             data.pop("private_key", None)
             self._write_profile(profile_name, data)
@@ -429,7 +437,7 @@ class Vpn:
 
         return profile
 
-    def _connect(self, profile_name,  use_kmod):
+    def _connect(self, profile_name,  use_kmod, safe_preup=True):
         try:
             self._require_interface()
             profile = self.get_profile(profile_name)
@@ -446,6 +454,7 @@ class Vpn:
             self._disconnect_other_interfaces(profile.get('interface_name'))
             profile_with_key = dict(profile)
             profile_with_key["private_key"] = key
+            profile_with_key["safe_preup"] = bool(safe_preup)
             return self.interface._connect(profile_with_key, PROFILES_DIR / profile_name / 'config.ini', use_kmod)
         except Exception as e:
             return str(e)
@@ -490,12 +499,13 @@ class Vpn:
             return stdout.decode().strip()
         return stderr.decode().strip()
 
-    def save_profile(self, profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, pre_up, peers):
+    def save_profile(self, profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, pre_up, post_up, pre_down, post_down, peers, existing_profiles=None, used_ifaces=None):
         if '/' in profile_name:
             return '"/" is not allowed in profile names'
 
         private_key = (private_key or "").strip()
-        existing_profiles = self._load_profiles()
+        if existing_profiles is None:
+            existing_profiles = self._load_profiles()
         use_existing_key = False
         if not private_key:
             if profile_name in existing_profiles and secrets_store.secret_exists(profile_name, self._sudo_pwd):
@@ -570,13 +580,16 @@ class Vpn:
                 except Exception as e:
                     return 'Bad dns ' + dns + ': ' + str(e)
 
-        used = set()
-        for name, data in existing_profiles.items():
-            if name == profile_name:
-                continue
-            iface = data.get('interface_name')
-            if iface:
-                used.add(iface)
+        if used_ifaces is None:
+            used = set()
+            for name, data in existing_profiles.items():
+                if name == profile_name:
+                    continue
+                iface = data.get('interface_name')
+                if iface:
+                    used.add(iface)
+        else:
+            used = set(used_ifaces)
 
         interface_name = self._unique_interface_name(interface_name or f"wg_{profile_name}", used)
         if not use_existing_key:
@@ -593,10 +606,15 @@ class Vpn:
                    'dns_servers': dns_servers,
                    'extra_routes': extra_routes,
                    'pre_up': pre_up,
+                   'post_up': post_up,
+                   'pre_down': pre_down,
+                   'post_down': post_down,
                    'profile_name': profile_name,
                    'interface_name': interface_name,
                    }
         self._write_profile(profile_name, profile)
+        if used_ifaces is not None:
+            used_ifaces.add(interface_name)
         for legacy in ("privkey", "config.ini"):
             try:
                 legacy_path = (PROFILES_DIR / profile_name / legacy)
@@ -607,6 +625,12 @@ class Vpn:
 
     def import_conf(self, path):
         imported_profiles = []
+        existing_profiles = self._load_profiles()
+        used_ifaces = set()
+        for name, data in existing_profiles.items():
+            iface = data.get('interface_name')
+            if iface:
+                used_ifaces.add(iface)
 
         try:
             if path.endswith(".zip"):
@@ -615,40 +639,50 @@ class Vpn:
                     if not confs:
                         return {"error": "No .conf in zip"}
 
-                    with tempfile.TemporaryDirectory(prefix="wg_import_") as tmp_dir:
-                        for conf_name in confs:
-                            tmp_path = os.path.join(tmp_dir, os.path.basename(conf_name))
-                            with open(tmp_path, 'wb') as f:
-                                f.write(z.read(conf_name))
+                    for conf_name in confs:
+                        try:
+                            raw = z.read(conf_name)
+                        except KeyError:
+                            continue
+                        text = raw.decode("utf-8", errors="ignore")
+                        default_name = os.path.splitext(os.path.basename(conf_name))[0] or "imported"
 
-                            # feed one-by-one into parse_wireguard_conf
-                            profile_data = self.parse_wireguard_conf(tmp_path)
+                        profile_data = self._parse_wireguard_conf_lines(text.splitlines(), default_name)
 
-                            # profile_data = (profile_name, ip_address, private_key, iface, extra_routes, dns_servers, peers)
-                            profile_name = profile_data[0]
-                            ip_address = profile_data[1]
-                            private_key = profile_data[2]
-                            interface_name = profile_data[3]
-                            extra_routes = profile_data[4]
-                            dns_servers = profile_data[5]
-                            peers = profile_data[6]
-                            pre_up = profile_data[7] if len(profile_data) > 7 else ""
+                        # profile_data = (profile_name, ip_address, private_key, iface, extra_routes, dns_servers, peers, pre_up, post_up, pre_down, post_down)
+                        profile_name = profile_data[0]
+                        ip_address = profile_data[1]
+                        private_key = profile_data[2]
+                        interface_name = profile_data[3]
+                        extra_routes = profile_data[4]
+                        dns_servers = profile_data[5]
+                        peers = profile_data[6]
+                        pre_up = profile_data[7] if len(profile_data) > 7 else ""
+                        post_up = profile_data[8] if len(profile_data) > 8 else ""
+                        pre_down = profile_data[9] if len(profile_data) > 9 else ""
+                        post_down = profile_data[10] if len(profile_data) > 10 else ""
 
-                            if not ip_address.strip():
-                                return {"error": f"{conf_name} is missing Address in [Interface]"}
+                        if not ip_address.strip():
+                            return {"error": f"{conf_name} is missing Address in [Interface]"}
 
-                            # generate unique profile name on conflict
-                            original_name = profile_name
-                            suffix = 1
-                            while (PROFILES_DIR / profile_name).exists():
-                                profile_name = f"{original_name}_{suffix}"
-                                suffix += 1
+                        # generate unique profile name on conflict
+                        original_name = profile_name
+                        suffix = 1
+                        while (PROFILES_DIR / profile_name).exists():
+                            profile_name = f"{original_name}_{suffix}"
+                            suffix += 1
+                        interface_name = self._unique_interface_name(interface_name or f"wg_{profile_name}", used_ifaces)
 
-                            error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, pre_up, peers)
-                            if error:
-                                return {"error": error}
+                        # Ignore PreUp/PostUp/PreDown/PostDown on import for safety
+                        pre_up = ""
+                        post_up = ""
+                        pre_down = ""
+                        post_down = ""
+                        error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, pre_up, post_up, pre_down, post_down, peers, existing_profiles=existing_profiles, used_ifaces=used_ifaces)
+                        if error:
+                            return {"error": error}
 
-                            imported_profiles.append(profile_name)
+                        imported_profiles.append(profile_name)
 
                 return {"error": None, "profiles": imported_profiles}
 
@@ -662,12 +696,16 @@ class Vpn:
                 extra_routes = profile_data[4]
                 dns_servers = profile_data[5]
                 peers = profile_data[6]
-                pre_up = profile_data[7] if len(profile_data) > 7 else ""
+                pre_up = ""
+                post_up = ""
+                pre_down = ""
+                post_down = ""
 
                 if not ip_address.strip():
                     return {"error": "Config is missing Address in [Interface]"}
 
-                error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, pre_up, peers)
+                interface_name = self._unique_interface_name(interface_name or f"wg_{profile_name}", used_ifaces)
+                error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, pre_up, post_up, pre_down, post_down, peers, existing_profiles=existing_profiles, used_ifaces=used_ifaces)
                 if error:
                     return {"error": error}
 
@@ -702,6 +740,9 @@ class Vpn:
             "Address": [],
             "DNS": [],
             "PreUp": [],
+            "PostUp": [],
+            "PreDown": [],
+            "PostDown": [],
         }
         for raw in lines:
             line = raw.strip()
@@ -735,7 +776,7 @@ class Vpn:
 
             key, val = map(str.strip, line.split("=", 1))
             val = _strip_inline_comment(val)
-            if not val and key.lower() not in ("preup",):
+            if not val and key.lower() not in ("preup", "postup", "predown", "postdown"):
                 continue
 
             if current_peer is None:
@@ -743,6 +784,15 @@ class Vpn:
                 if key_lower == "preup":
                     if val:
                         iface["PreUp"].append(val)
+                elif key_lower == "postup":
+                    if val:
+                        iface["PostUp"].append(val)
+                elif key_lower == "predown":
+                    if val:
+                        iface["PreDown"].append(val)
+                elif key_lower == "postdown":
+                    if val:
+                        iface["PostDown"].append(val)
                 elif key_lower == "address":
                     iface["Address"] += _split_csv(val)
                 elif key_lower == "dns":
@@ -774,6 +824,9 @@ class Vpn:
             ", ".join(iface.get("DNS", [])),
             peers,
             "\n".join(iface.get("PreUp", [])),
+            "\n".join(iface.get("PostUp", [])),
+            "\n".join(iface.get("PreDown", [])),
+            "\n".join(iface.get("PostDown", [])),
         )
 
     def parse_wireguard_conf(self, path):
@@ -823,7 +876,11 @@ class Vpn:
         extra_routes = profile_data[4]
         dns_servers = profile_data[5]
         peers = profile_data[6]
-        pre_up = profile_data[7] if len(profile_data) > 7 else ""
+        # Ignore PreUp/PostUp/PreDown/PostDown on import for safety
+        pre_up = ""
+        post_up = ""
+        pre_down = ""
+        post_down = ""
 
         if profile_name_override:
             override = self._sanitize_profile_name(str(profile_name_override).strip(), profile_name)
@@ -849,7 +906,7 @@ class Vpn:
             profile_name = f"{original_name}_{suffix}"
             suffix += 1
 
-        error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, pre_up, peers)
+        error = self.save_profile(profile_name, ip_address, private_key, interface_name, extra_routes, dns_servers, pre_up, post_up, pre_down, post_down, peers, existing_profiles=profiles, used_ifaces=used)
         if error:
             return {"error": error}
 
@@ -927,6 +984,24 @@ class Vpn:
                             line = line.strip()
                             if line:
                                 lines.append(f"PreUp = {line}")
+                    post_up = (data.get("post_up") or "").strip()
+                    if post_up:
+                        for line in post_up.splitlines():
+                            line = line.strip()
+                            if line:
+                                lines.append(f"PostUp = {line}")
+                    pre_down = (data.get("pre_down") or "").strip()
+                    if pre_down:
+                        for line in pre_down.splitlines():
+                            line = line.strip()
+                            if line:
+                                lines.append(f"PreDown = {line}")
+                    post_down = (data.get("post_down") or "").strip()
+                    if post_down:
+                        for line in post_down.splitlines():
+                            line = line.strip()
+                            if line:
+                                lines.append(f"PostDown = {line}")
                     dns = (data.get("dns_servers") or "").strip()
                     if dns:
                         lines.append(f"DNS = {dns}")
@@ -1075,15 +1150,15 @@ class Vpn:
 
 
     def delete_profile(self, profile):
-        print(profile)
         PROFILE_DIR = PROFILES_DIR / profile
-        print(PROFILE_DIR)
         try:
             secrets_store.delete_private_key(profile, self._sudo_pwd)
         except Exception:
             pass
         try:
             shutil.rmtree(PROFILE_DIR.as_posix())
+        except FileNotFoundError:
+            return None
         except OSError as e:
             return f'Error: {PROFILE_DIR}: {e.strerror}'
 
@@ -1094,21 +1169,33 @@ class Vpn:
     def get_profile(self, profile):
         with (PROFILES_DIR / profile / 'profile.json').open() as fd:
             data = json.load(fd)
-            self._migrate_profile_secret(profile, data)
+            existing_keys = secrets_store.list_private_keys(self._sudo_pwd)
+            self._migrate_profile_secret(profile, data, existing_keys=existing_keys)
             data['private_key'] = ""
+            data['pre_up'] = data.get('pre_up') or ""
+            data['post_up'] = data.get('post_up') or ""
+            data['pre_down'] = data.get('pre_down') or ""
+            data['post_down'] = data.get('post_down') or ""
+            data['has_private_key'] = profile in existing_keys
             return data
 
     def list_profiles(self):
         profiles = []
         raw_profiles = {}
+        existing_keys = secrets_store.list_private_keys(self._sudo_pwd)
         for path in PROFILES_DIR.glob('*/profile.json'):
             try:
                 with path.open() as fd:
                     data = json.load(fd)
             except Exception:
                 continue  # skip broken files
-            self._migrate_profile_secret(path.parent.name, data)
+            self._migrate_profile_secret(path.parent.name, data, existing_keys=existing_keys)
             data['private_key'] = ""
+            data['pre_up'] = data.get('pre_up') or ""
+            data['post_up'] = data.get('post_up') or ""
+            data['pre_down'] = data.get('pre_down') or ""
+            data['post_down'] = data.get('post_down') or ""
+            data['has_private_key'] = path.parent.name in existing_keys
             raw_profiles[path.parent.name] = data
 
         active_by_privkey = {}

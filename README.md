@@ -8,8 +8,9 @@ Fork of the original wireguard_qml adapted and maintained for Ubuntu Touch commu
 - Userspace fallback (wireguard-go) when kernel module unavailable
 - QR/zip/import support for .conf configs
 - Extra routes and DNS per profile
-- PreUp hooks (run commands before interface up)
+- Hook commands (PreUp/PostUp/PreDown/PostDown)
 - Root-only private key storage (0600) under `/home/phablet/.local/share/wireguard.sysadmin/keys`
+- Faster zip import and profile list loading (single key scan; reduced sudo spam)
 
 ## Screenshots
 ![Main screen](screenshots/screenshot20260210_132652130.png)
@@ -36,15 +37,23 @@ For adding WireGuard to a UT kernel, follow upstream instructions: https://www.w
 ## Export configs
 All profiles can be exported to `/home/phablet/Downloads/wireguard.zip` (auto-increments if the file exists) via Settings → “Export tunnels to zip file”.
 
-## PreUp (usage)
-PreUp runs **before** the interface is brought up. It is useful for setup tasks (e.g., add custom routes, set firewall marks, etc.).
+## Hooks (usage)
+Hooks run as root around connect/disconnect:
+- `PreUp` — before interface up
+- `PostUp` — after interface up
+- `PreDown` — before interface down
+- `PostDown` — after interface down
 
 Usage:
 1. Open a profile.
-2. Fill the “PreUp command” field.
+2. Fill any of the hook fields.
 3. You can provide multiple commands separated by `;` or on new lines.
 
-Example:
+Notes:
+- Safe mode blocks unsafe commands and commands not available on the system.
+- Hooks from imported configs are ignored for safety.
+
+Example (PreUp):
 ```
 ip rule add fwmark 51820 table 51820
 ip route add default dev wg0 table 51820

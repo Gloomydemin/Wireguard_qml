@@ -86,6 +86,29 @@ def secret_exists(profile_name, sudo_pwd=None):
     return bool(res and err is None and res.returncode == 0)
 
 
+def list_private_keys(sudo_pwd=None):
+    if os.geteuid() == 0:
+        try:
+            if not KEY_DIR.exists():
+                return set()
+            return {p.stem for p in KEY_DIR.glob("*.key")}
+        except Exception:
+            return set()
+
+    if not sudo_pwd:
+        # Avoid sudo spam when password isn't available.
+        return set()
+
+    res, err = _sudo_run(["/bin/ls", "-1", str(KEY_DIR)], sudo_pwd)
+    if err:
+        return set()
+    names = set()
+    for line in res.stdout.decode(errors="ignore").splitlines():
+        if line.endswith(".key"):
+            names.add(Path(line).stem)
+    return names
+
+
 def set_private_key(profile_name, private_key, sudo_pwd):
     key_bytes = private_key
     if isinstance(key_bytes, str):
